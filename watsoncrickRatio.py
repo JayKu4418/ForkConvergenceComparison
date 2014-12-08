@@ -481,9 +481,23 @@ def tRNAGenesFoundInRegion(trnagenesfile,region,window):
     start = region[1]
     end = region[2]
     
-    validtrnasForRegion = [i for i in trnas if i[0]==chromosome and ( (i[1] <= end+window and i[1] >= start-window) or (i[2] <= end+window and i[2] >= start-window) ) ]
+    validtrnasForRegion = [i for i in trnas if i[1]==chromosome and ( (int(i[2]) <= end+window and int(i[2]) >= start-window) or (int(i[3]) <= end+window and int(i[3]) >= start-window) ) ]
     
     return validtrnasForRegion
+    
+# This function counts number of tRNA genes in a bunch of regions
+def tRNAGenesFoundInMultipleRegions(trnagenesfile,regionfile,window):
+    with open(regionfile) as f:
+        regsBothWTandMUT = [line.strip().split('\t') for line in f][1:]
+        
+    tRNAsFound = []
+    
+    for i in regsBothWTandMUT:
+        reg = [i[0],min(int(i[1]),int(i[3])),max(int(i[2]),int(i[4]))]
+        tRNASInReg = tRNAGenesFoundInRegion(trnagenesfile,reg,window)        
+        tRNAsFound.append([reg,tRNASInReg])
+        
+    return tRNAsFound
 #############################PLOT#########################################
 # Function to plot watson-crick ratios
 
