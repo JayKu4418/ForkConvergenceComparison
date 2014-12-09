@@ -490,7 +490,7 @@ def overlappingDiffTroughs(valsforWT,valsforMUT,window,corrcoefflim,midptlim):
     
     orgsInCommonMUT = [i for i in orgsMUTCrossOver if i in [i for i in orgsMUTCorrCoeff if i in orgsMUTMidpoint]]
 """    
-
+#############################GENOMIC ELEMENTS OF INTEREST #########################################
 # This function grabs the tRNA genes found within a window around a region. 
 # The region contains the chromosome and the start and end coordinate 
 def tRNAGenesFoundInRegion(trnagenesfile,region,window):
@@ -518,6 +518,34 @@ def tRNAGenesFoundInMultipleRegions(trnagenesfile,regionfile,window):
         tRNAsFound.append([reg,tRNASInReg])
         
     return tRNAsFound
+
+# This function grabs the G4 quads found within a window around a region. 
+# The region contains the chromosome and the start and end coordinate    
+def g4QuadsFoundInRegion(g4quadsfile,region,window):
+    with open(g4quadsfile) as f:
+        g4s = [line.strip().split('\t') for line in f]
+    
+    chromosome = region[0]
+    start = region[1]
+    end = region[2]
+    
+    validg4sForRegion = [i for i in g4s if i[0]==chromosome and ( (int(i[1]) <= end+window and int(i[1]) >= start-window) or (int(i[2]) <= end+window and int(i[2]) >= start-window) ) ]
+    
+    return validg4sForRegion
+    
+# This function counts number of tRNA genes in a bunch of regions
+def g4QuadsFoundInMultipleRegions(g4quadsfile,regionfile,window):
+    with open(regionfile) as f:
+        regsBothWTandMUT = [line.strip().split('\t') for line in f][1:]
+        
+    g4sFound = []
+    
+    for i in regsBothWTandMUT:
+        reg = [i[0],min(int(i[1]),int(i[3])),max(int(i[2]),int(i[4]))]
+        g4sInReg = g4QuadsFoundInRegion(g4quadsfile,reg,window)        
+        g4sFound.append([reg,g4sInReg])
+        
+    return g4sFound
 #############################PLOT#########################################
 # Function to plot watson-crick ratios
 
