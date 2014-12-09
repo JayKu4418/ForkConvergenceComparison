@@ -21,23 +21,33 @@ def extractStartEndChromStrandFortRNAs(tRNAfile):
     
     return tRNAsToRet
     
-# This function returns wcratio dictionary near a single tRNA gene for both WT and MUT. The tRNA gene contains
-# chromosome, start, end, and strand
-def wcratioNeartRNAGeneForChrom(wcratiofileWT,wcratiofileMUT,tRNAGene):
+# This function returns troughs within which tRNA gene are found
+def troughsInWhichtRNAGeneFoundForChrom(troughsfile,tRNAGene):
     
-    start = tRNAGene[1] - 1000
-    end = tRNAGene[2] + 1000
+    start = tRNAGene[1]
+    end = tRNAGene[2]
     chromosome = tRNAGene[0]
     
-    with open(wcratiofileWT) as f:
-        valsforchromWT = [float(line.strip().split('\t')[2]) for line in f if line.strip().split('\t')[0]==chromosome][start:end]
+    with open(troughsfile) as f:
+        troughs = [line.strip().split('\t') for line in f]
         
-    with open(wcratiofileMUT) as f:
-        valsforchromMUT = [float(line.strip().split('\t')[2]) for line in f if line.strip().split('\t')[0]==chromosome][start:end]
-        
-    wcratio = {'WT':valsforchromWT,'MUT':valsforchromMUT}
+    justchrmstartend = [[i[0],i[1],min(int(i[2]),int(i[4])),max(int(i[3]),int(i[5]))] for i in troughs]
     
-    return wcratio
+    troughsFound = [j[0].split('"')[1] for j in justchrmstartend if chromosome == j[1] and start >= j[2] and end <= j[3]]
+    
+    return troughsFound
+    
+# This function returns all troughs in which all tRNA genes are found
+def troughsWhichAllContaintRNAGenes(troughsfile,tRNAfile):
+    
+    trnas = extractStartEndChromStrandFortRNAs(tRNAfile)
+   
+    alltroughs = []
+    
+    for t in trnas:
+        alltroughs.extend(troughsInWhichtRNAGeneFoundForChrom(troughsfile,t))
+        
+    return alltroughs
     
 def featuresOftRNAGenesForChromosome(tRNAs,valsforWT,valsforMUT):
 
