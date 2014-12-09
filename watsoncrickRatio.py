@@ -20,6 +20,8 @@ from scipy.spatial import distance
 # This is a dictionary of yeast chromosome sizes
 #yeastsize = {'1':230218,'2':813184,'3':316620,'4':1531933,'5':576874,'6':270161,'7':1090940,'8':562643,'9':439888,'10':745751,'11':666816,'12':1078177,'13':924431,'14':784333,'15':1091291,'16':948066,'Total':12157105}
 
+# dictionary that converts values from the form 'chrmIII' to '3'
+chrmconvert = {'chrI':'1','chrII':'2','chrIII':'3','chrIV':'4','chrV':'5','chrVI':'6','chrVII':'7','chrVIII':'8','chrIX':'9','chrX':'10','chrXI':'11','chrXII':'12','chrXIII':'13','chrXIV':'14','chrXV':'15','chrXVI':'16'}
 
 # This function calcuates the 2log ratio of watson to crick hits
 def watsoncricklogratio(sgrfileW,sgrfileC,chrom):
@@ -405,6 +407,24 @@ def writefeaturesOfOriginPairsForAllChromosomes(wcratiofileWT,wcratiofileMUT,wri
                 secderdist = str(i[1]['SecDer'][1])
                 fw.write(chromosome + '\t' + wto1 + '\t' + wto2 + '\t' + muto1 + '\t' + muto2 + '\t' + wttermratio + '\t' + muttermratio + '\t' + corr + '\t' + dist + '\t' + firstdercorr + '\t' + firstderdist + '\t' + secdercorr + '\t' + secderdist + '\n')
         
+# thos function gets rid of certain regions that overlap with the transposon regions where you have sequence gaps
+# Remove troughs found within Ty1 elements
+def removeRegionsFoundWithinTransposableElements(labelledtroughsfile,transfile,writefile):
+    with open(labelledtroughsfile) as f:
+        troughs = [line.strip().split('\t') for line in f][1:]
+    with open(writefile,'w') as fw:
+        for i in troughs:
+            chrm = i[0]
+            firsttroughStart = int(i[1])
+            secondtroughStart = int(i[3])
+            firsttroughEnd = int(i[2])
+            secondtroughEnd = int(i[4])
+            with open(transfile) as f:
+                transValid = [line.strip().split(' ') for line in f if chrmconvert[line.strip().split(' ')[1]]==chrm]
+            #transFoundInTrough = [j for j in transValid if (j[4]=='W' and ((int(j[2]) >= firsttroughStart and int(j[2]) <= firsttroughEnd) or (int(j[2]) >= secondtroughStart and int(j[2]) <= secondtroughEnd) )) or (j[4]=='C' and ((int(j[3]) >= firsttroughStart and int(j[3]) <= firsttroughEnd) or (int(j[3]) >= secondtroughStart and int(j[3]) <= secondtroughEnd)))]
+            transFoundInTrough = [j for j in transValid if ((int(j[2]) >= firsttroughStart and int(j[2]) <= firsttroughEnd) or (int(j[2]) >= secondtroughStart and int(j[2]) <= secondtroughEnd) )]
+            if len(transFoundInTrough)==0:
+                fw.write(i[0] + '\t' + i[1] + '\t' + i[2] + '\t' + i[3] + '\t' + i[4] + '\t' + i[5] + '\t' + i[6] + '\t' + i[7] + '\t' + i[8] + '\t' + i[9] + '\t' + i[10] + '\t' + i[11] + '\t' + i[12] + '\n')
                
 ###############################################################################
 ##########################NORMALIZE WATSON CRICK VALS##########################
