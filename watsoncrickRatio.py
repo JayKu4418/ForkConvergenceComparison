@@ -118,11 +118,31 @@ def draw_tangent(x,y,a):
     tan = fa+fprime*(small_t-a) # tangent
     #plot(x,y,alpha=0.5)
     plot(a,fa,'om',small_t,tan,'--r')
-
+"""
 def calculateDer(vals,d=1):
     spl = interpolate.splrep(range(len(vals)),vals)
     fprime = [1000*(interpolate.splev(i,spl,der=d)) for i in range(len(vals))]
     return fprime
+"""
+
+def calculateDer(vals,d=1):
+    if d==1:
+        return np.gradient(vals,1)
+    else:
+        firstder = np.gradient(vals,1)
+        return np.gradient(firstder,1)
+        
+def writeDerFile(wcratiofile,d,writefile):
+    with open(writefile,'w') as fw:
+        for c in range(1,17):
+            chromosome = str(c)
+            print chromosome
+            with open(wcratiofile) as f:
+                vals = [float(line.strip().split('\t')[2]) for line in f if line.strip().split('\t')[0]==chromosome]
+            
+            dercalculated = calculateDer(vals,d)
+            for i in range(1,len(vals)+1):
+                fw.write(chromosome + '\t' + str(i) + '\t' + str(dercalculated[i-1]) + '\n')
     
 ###################################################################################  
     

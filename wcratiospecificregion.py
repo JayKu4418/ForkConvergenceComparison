@@ -4,12 +4,49 @@ Created on Wed Dec  3 17:14:02 2014
 
 @author: jayashreekumar
 """
-
+#######################################################################################################################
+# IMPORT
 #import numpy as np
 #import matplotlib.pyplot as plt
 import watsoncrickRatio as wcr
 import random
 yeastsize = {'1':230218,'2':813184,'3':316620,'4':1531933,'5':576874,'6':270161,'7':1090940,'8':562643,'9':439888,'10':745751,'11':666816,'12':1078177,'13':924431,'14':784333,'15':1091291,'16':948066,'Total':12157105}
+
+#######################################################################################################################
+# FUNCTIONS
+# This function grabs wcratio vals from the WT and MUT files for a particular region that has a chromosome and start
+# and end coordinate and calculates vals for the feat indicated in each region
+def featuresOfRegionsOfInterest(interestRegions,feat,valsWT,valsMUT,window):
+
+    allregions = []
+    
+    for i in interestRegions:
+        print i
+        startend = [i[1]-window,i[2]+window]        
+        valsforWT = [float(m[2]) for m in valsWT if m[0]==i[0]]
+        valsforMUT = [float(m[2]) for m in valsMUT if m[0]==i[0]]
+        print("Here")
+        if feat=="Corr":
+            featval = wcr.getCorrCoeffBetweenPairsOfCoordsForChromosome(valsforWT,startend,valsforMUT,startend)
+        elif feat=="EucDist":
+            featval = wcr.getEuclideanDistanceBetweenPairsOfCoordsForChromosome(valsforWT,startend,valsforMUT,startend)
+        elif feat=="FirstDerCorr":
+            firstder = wcr.getCorrCoeffAndEucDistBetweenFirstDerOfPairsOfCoordsForChromosome(valsforWT,startend,valsforMUT,startend)
+            featval = firstder[0][0]
+        elif feat=="FirstDerEucDist":
+            firstder = wcr.getCorrCoeffAndEucDistBetweenFirstDerOfPairsOfCoordsForChromosome(valsforWT,startend,valsforMUT,startend)
+            featval = firstder[1]
+        elif feat=="SecDerCorr":
+            secder = wcr.getCorrCoeffAndEucDistBetweenSecDerOfPairsOfCoordsForChromosome(valsforWT,startend,valsforMUT,startend)
+            featval = secder[0][0]
+        elif feat=="SecDerEucDist":
+            secder = wcr.getCorrCoeffAndEucDistBetweenSecDerOfPairsOfCoordsForChromosome(valsforWT,startend,valsforMUT,startend)
+            featval = secder[1]
+        
+        allregions.append([i,featval])
+
+    return allregions
+
 ################################TRNA GENES##################################
 # This function takes a tRNAfile which has order tRNA name, chromosome, 
 # start, end, strand. Note that for crick, the start is larger than the end
@@ -49,32 +86,16 @@ def troughsWhichAllContaintRNAGenes(troughsfile,tRNAfile):
         
     return alltroughs
     
-def featuresOftRNAGenesForChromosome(tRNAs,valsforWT,valsforMUT):
+# This function returns features around a certain window around tRNA genes
+def maintRNAgenefeats(tRNAfile,feat,wcratiofileWT,wcratiofileMUT,window):
+    trnas = extractStartEndChromStrandFortRNAs(tRNAfile)
+    with open(wcratiofileWT) as f:
+        valsforWT = [line.strip().split('\t') for line in f]
+    with open(wcratiofileMUT) as f:
+        valsforMUT = [line.strip().split('\t') for line in f]
+    feats = featuresOfRegionsOfInterest(trnas,feat,valsforWT,valsforMUT,window)
+    return feats
 
-    allfeatures = []
-    
-    for i in tRNAs:
-        
-        startend = [i[1]-1000,i[2]+1000]        
-        
-        featureperpair = {}
-        corr = wcr.getCorrCoeffBetweenPairsOfCoordsForChromosome(valsforWT,startend,valsforMUT,startend)
-        dist = wcr.getEuclideanDistanceBetweenPairsOfCoordsForChromosome(valsforWT,startend,valsforMUT,startend)
-        
-        firstder = wcr.getCorrCoeffAndEucDistBetweenFirstDerOfPairsOfCoordsForChromosome(valsforWT,startend,valsforMUT,startend)
-        
-    
-        secder = wcr.getCorrCoeffAndEucDistBetweenSecDerOfPairsOfCoordsForChromosome(valsforWT,startend,valsforMUT,startend)
-        
-        featureperpair['Corr'] = corr
-        featureperpair['Dist'] = dist
-        featureperpair['FirstDer'] = [firstder[0][0],firstder[1]]
-        featureperpair['SecDer'] = [secder[0][0],secder[1]]
-
-        allfeatures.append([i,featureperpair])
-
-    return allfeatures
-    
 ##############################################################################
 
 ################################RANDOM########################################
