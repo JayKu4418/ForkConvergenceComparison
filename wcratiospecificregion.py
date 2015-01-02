@@ -10,6 +10,7 @@ Created on Wed Dec  3 17:14:02 2014
 #import matplotlib.pyplot as plt
 import watsoncrickRatio as wcr
 import random
+import ManipulateSeqData.findrepeats as fr
 yeastsize = {'1':230218,'2':813184,'3':316620,'4':1531933,'5':576874,'6':270161,'7':1090940,'8':562643,'9':439888,'10':745751,'11':666816,'12':1078177,'13':924431,'14':784333,'15':1091291,'16':948066,'Total':12157105}
 
 #######################################################################################################################
@@ -98,6 +99,19 @@ def maintRNAgenefeats(tRNAfile,feat,wcratiofileWT,wcratiofileMUT,window):
 
 ##############################################################################
 
+################################CAG REPEATS##################################
+def maincagrepeatsfeatsForChromosome(fastafile,numrepeats,chromosome,window,feat,wcratiofileWT,wcratiofileMUT):
+    locsOfcagrepeats = fr.getCAGRepeatsForChromsome(fastafile,chromosome,numrepeats)
+    with open(wcratiofileWT) as f:
+        valsforWT = [line.strip().split('\t') for line in f]
+    with open(wcratiofileMUT) as f:
+        valsforMUT = [line.strip().split('\t') for line in f]
+    properlocscagrepeats = [[chromosome,i,i] for i in locsOfcagrepeats]
+    feats = featuresOfRegionsOfInterest(properlocscagrepeats,feat,valsforWT,valsforMUT,window)
+    return feats
+            
+
+##############################################################################
 ################################RANDOM########################################
 # Collect random coordinates for chromosome
 def randomCoordinatesforchromosome(chromosome,numpoints,window):
