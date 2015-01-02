@@ -613,9 +613,9 @@ def plotTwoWatsonCrickRatioFromFile(wcratiofile1,wcratiofile2,chromosome,strain1
         vals2 = [float(line.strip().split('\t')[2]) for line in f if line.strip().split('\t')[0]==chromosome]
     
     # Plot first file
-    plt.plot(vals1,'.-b',label=strain1)
+    plt.plot(vals1,'b',label=strain1)
     # Plot second file
-    plt.plot(vals2,'.-g',label=strain2)
+    plt.plot(vals2,'g',label=strain2)
     # Set the x limit to be the number of bases for that chromosome
     plt.xlim(xmax=len(vals1))
     # Set a clear x axis
