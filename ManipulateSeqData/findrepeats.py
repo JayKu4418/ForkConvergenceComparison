@@ -54,6 +54,15 @@ def getRepeatsForChromsome(fastafile,chromosome,repeat,numrepeats):
     seq = extractChromosomeSeq(fastafile,chromosome)
     return extractIndexrepeats(seq,repeat,numrepeats)
 
+# Thie function calculates the total number of trinucleotide repeats of a certain length
+# found throughout the entire genome
+def totalNumRepeatsAllGenome(fastafile,repeat,numrepeats):
+    count = 0
+    for c in range(1,17):
+        chromosome = str(c)
+        seq = extractChromosomeSeq(fastafile,chromosome)
+        count = count + len(extractIndexrepeats(seq,repeat,numrepeats))
+    return count
 # This function gives the total lengths of trinucleotide repeats found for 
 # each chromosome
 def extractLengthsTrinucleotideRepeats(fastafile,chromosome,repeat,retlength):
