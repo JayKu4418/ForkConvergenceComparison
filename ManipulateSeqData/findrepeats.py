@@ -26,7 +26,18 @@ def extractChromosomeSeq(fastafile,chromosome):
             chrm = element
     rec = [record for record in SeqIO.parse(open(fastafile,'rU'),'fasta') if record.name == chrm]
     return str(rec[0].seq)
-    
+
+# This function counts the total number of bases in entire yeast genome
+def totalBasesYeastGenome(fastafile,base=""):
+    total = 0
+    for c in range(1,17):
+        chromosome = str(c)
+        seq = extractChromosomeSeq(fastafile,chromosome)
+        if base!="":
+            total = total + seq.count(base)
+        else:
+            total = total + len(seq)
+    return total
 # This function finds indexes for where CAG repeats starts. The parameters 
 # for this function, seq, the number of CAG repeats to find
 #def extractIndexCAGrepeats(seq,numrepeats):
