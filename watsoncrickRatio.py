@@ -13,6 +13,7 @@ import ManipulateSeqData.oem as oem
 #from operator import itemgetter
 from scipy.stats import pearsonr
 from scipy.spatial import distance
+import ManipulateSeqData.findrepeats as fr
 #import matplotlib.pyplot as plt
 #import Bio.Statistics as bs
 #from datetime import datetime
@@ -538,6 +539,35 @@ def tRNAGenesFoundInMultipleRegions(trnagenesfile,regionfile,window):
         tRNAsFound.append([reg,tRNASInReg])
         
     return tRNAsFound
+
+# This function counts number of CNG repeats found within a window around a 
+# region. The region should contain the chromosome and start and end coordinate
+def cngrepeatsFoundInRegion(fastafile,repeat,region,window):
+    
+    chromosome = region[0]
+    start = region[1]
+    end = region[2]
+    
+    cngreps = []   
+    for r in range(4,14):
+        cngreps.extend(fr.getRepeatsForChromsome(fastafile,chromosome,repeat,r))
+    
+    validcngsForRegion = [i for i in cngreps if i[1]==chromosome and ( (int(i[2]) <= end+window and int(i[2]) >= start-window) or (int(i[3]) <= end+window and int(i[3]) >= start-window) ) ]
+    return validcngsForRegion
+    
+# This function counts number of cng repeats in a bunch of regions
+def cngRepsFoundInMultipleRegions(fastafile,repeat,regionfile,window):
+    with open(regionfile) as f:
+        regsBothWTandMUT = [line.strip().split('\t') for line in f][1:]
+        
+    cngRepsFound = []
+    
+    for i in regsBothWTandMUT:
+        reg = [i[0],min(int(i[1]),int(i[3])),max(int(i[2]),int(i[4]))]
+        cngRepsInReg = cngrepeatsFoundInRegion(fastafile,repeat,reg,window)        
+        cngRepsFound.append([reg,cngRepsInReg])
+        
+    return cngRepsFound
 
 # This function grabs the G4 quads found within a window around a region. 
 # The region contains the chromosome and the start and end coordinate    
