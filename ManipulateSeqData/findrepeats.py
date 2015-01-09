@@ -54,16 +54,16 @@ def totalBasesYeastGenome(fastafile,base=""):
 
 # This function finds indexes for any three letter repeats. The parametes 
 # for this function, seq, the three letter repeat, number of three letter repeats
-def extractIndexrepeats(seq,repeat,numrepeats):
+def extractIndexrepeats(seq,chromosome,repeat,numrepeats):
     regexexpr = "(?<!(" + repeat + "))(" + repeat + "){" + str(numrepeats) +"}(?!(" + repeat + "))"
     regs = re.finditer(regexexpr,seq)
-    return [[i.start(0),i.end(0)] for i in regs]
+    return [[chromosome,i.start(0),i.end(0)] for i in regs]
 
 # This function combines the above two functions where it finds the trinucleotide repeats 
 # for a fastafile for a chromosome
 def getRepeatsForChromsome(fastafile,chromosome,repeat,numrepeats):
     seq = extractChromosomeSeq(fastafile,chromosome)
-    return extractIndexrepeats(seq,repeat,numrepeats)
+    return extractIndexrepeats(seq,chromosome,repeat,numrepeats)
 
 # Thie function calculates the total number of trinucleotide repeats of a certain length
 # found throughout the entire genome

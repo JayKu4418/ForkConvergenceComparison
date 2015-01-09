@@ -14,6 +14,7 @@ import ManipulateSeqData.oem as oem
 from scipy.stats import pearsonr
 from scipy.spatial import distance
 import ManipulateSeqData.findrepeats as fr
+import wcratiospecificregion as wcs
 #import matplotlib.pyplot as plt
 #import Bio.Statistics as bs
 #from datetime import datetime
@@ -540,35 +541,96 @@ def tRNAGenesFoundInMultipleRegions(trnagenesfile,regionfile,window):
         
     return tRNAsFound
 
+# This function looks at the watson crick ratio at each tRNA gene and writes it
+# into a file about 10000 bases away
+def tRNAGenesWCRatioWriteFile(trnagenesfile,wcratiofile,window,writefile):
+    trnas = wcs.extractStartEndChromStrandFortRNAs(trnagenesfile)
+    with open(writefile,'w') as fw:
+        for c in range(1,17):
+            chromosome = str(c)
+            with open(wcratiofile) as f:
+                wcratiosforchrom = [float(line.strip().split('\t')[2]) for line in f if line.strip().split('\t')[0]==chromosome]
+            print(len(wcratiosforchrom))
+            trnasforchrom = [i for i in trnas if i[0]==chromosome]
+            for t in trnasforchrom:
+                start = t[1]-window
+                end = t[1]+window
+                fw.write(t[0]+'\t'+str(t[1]) + '\t' + str(t[2]) + '\t' + t[3] + '\t')
+                listToWrite = [str(i) for i in wcratiosforchrom[start:end]]
+                fw.write('\t'.join(listToWrite))
+                fw.write('\n')
+                
+# This function calculates the average watson crick ratio for every base pair 
+# away +500 and =500 away from the tRNA gene 
+def tRNAGenesWCRatioMeanForStrand(trnageneWCRatiofile,strand,window):
+    with open(trnageneWCRatiofile) as f:
+        wcratios = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
+    avgratios = []
+    for r in range(4,2*window+4):
+        ratiosforr = [float(i[r]) for i in wcratios]
+        avgratios.append(np.mean(ratiosforr))
+    return avgratios
+    
+# This function calculates the average watson crick ratio for every base pair 
+# away +500 and =500 away from the tRNA gene 
+def tRNAGenesDiffTwoStrainsWCRatioMeanForStrand(trnageneWCRatiofile1,trnageneWCRatiofile2,strand,window):
+    with open(trnageneWCRatiofile1) as f:
+        wcratios1 = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
+    with open(trnageneWCRatiofile2) as f:
+        wcratios2 = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
+    oneminustwo = []
+    for r in range(len(wcratios1)):
+        w = wcratios1[r][4:]
+        m = wcratios2[r][4:]
+        oneminustwo.append([float(i)-float(j) for i,j in zip(w,m)])
+    avgratios = []
+    for r in range(2*window):
+        ratiosforr = [float(i[r]) for i in oneminustwo]
+        avgratios.append(np.mean(ratiosforr))
+    return avgratios
 # This function counts number of CNG repeats found within a window around a 
 # region. The region should contain the chromosome and start and end coordinate
-def cngrepeatsFoundInRegion(fastafile,repeat,region,window):
+def cngrepeatsFoundInRegion(cngreps,region,window):
     
     chromosome = region[0]
     start = region[1]
     end = region[2]
     
-    cngreps = []   
-    for r in range(4,14):
-        cngreps.extend(fr.getRepeatsForChromsome(fastafile,chromosome,repeat,r))
-    
-    validcngsForRegion = [i for i in cngreps if i[1]==chromosome and ( (int(i[2]) <= end+window and int(i[2]) >= start-window) or (int(i[3]) <= end+window and int(i[3]) >= start-window) ) ]
+    validcngsForRegion = [i for i in cngreps if i[0]==chromosome and ( (int(i[1]) <= end+window and int(i[1]) >= start-window) or (int(i[2]) <= end+window and int(i[2]) >= start-window) ) ]
     return validcngsForRegion
     
 # This function counts number of cng repeats in a bunch of regions
-def cngRepsFoundInMultipleRegions(fastafile,repeat,regionfile,window):
+def cngRepsFoundInMultipleRegions(fastafile,repeat1,repeat2,regionfile,window):
     with open(regionfile) as f:
         regsBothWTandMUT = [line.strip().split('\t') for line in f][1:]
         
     cngRepsFound = []
-    
-    for i in regsBothWTandMUT:
-        reg = [i[0],min(int(i[1]),int(i[3])),max(int(i[2]),int(i[4]))]
-        cngRepsInReg = cngrepeatsFoundInRegion(fastafile,repeat,reg,window)        
-        cngRepsFound.append([reg,cngRepsInReg])
+    for c in range(1,17):
+        chromosome = str(c)
+        print chromosome
+        regsforchrom = [i for i in regsBothWTandMUT if i[0]==chromosome]
+        cngrepsforchrom = []   
+        for r in range(3,14):
+            cngrepsforchrom.extend(fr.getRepeatsForChromsome(fastafile,chromosome,repeat1,r))
+            cngrepsforchrom.extend(fr.getRepeatsForChromsome(fastafile,chromosome,repeat2,r))
+        #print cngrepsforchrom
+        for i in regsforchrom:
+            reg = [i[0],min(int(i[1]),int(i[3])),max(int(i[2]),int(i[4]))]
+            cngRepsInReg = cngrepeatsFoundInRegion(cngrepsforchrom,reg,window)        
+            cngRepsFound.append([reg,cngRepsInReg])
         
     return cngRepsFound
-
+    
+# This function counts the number of x repeats of CNG found in the regions of interest
+def numberOfcngrepeatsFoundInRegion(allcngreps,numrepeats):
+    xreps = [i[1] for i in allcngreps if len(i[1])>0]
+    xrepslen = []
+    for i in xreps:
+        xrepslen.extend([j[2]-j[1] for j in i])
+        
+    xdrepslenOfinterest = [i for i in xrepslen if i==numrepeats*3]
+    
+    return len(xdrepslenOfinterest)
 # This function grabs the G4 quads found within a window around a region. 
 # The region contains the chromosome and the start and end coordinate    
 def g4QuadsFoundInRegion(g4quadsfile,region,window):
