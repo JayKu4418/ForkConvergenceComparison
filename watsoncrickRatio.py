@@ -20,7 +20,7 @@ import wcratiospecificregion as wcs
 #from datetime import datetime
 
 # This is a dictionary of yeast chromosome sizes
-#yeastsize = {'1':230218,'2':813184,'3':316620,'4':1531933,'5':576874,'6':270161,'7':1090940,'8':562643,'9':439888,'10':745751,'11':666816,'12':1078177,'13':924431,'14':784333,'15':1091291,'16':948066,'Total':12157105}
+yeastsize = {'1':230218,'2':813184,'3':316620,'4':1531933,'5':576874,'6':270161,'7':1090940,'8':562643,'9':439888,'10':745751,'11':666816,'12':1078177,'13':924431,'14':784333,'15':1091291,'16':948066,'Total':12157105}
 
 # dictionary that converts values from the form 'chrmIII' to '3'
 chrmconvert = {'chrI':'1','chrII':'2','chrIII':'3','chrIV':'4','chrV':'5','chrVI':'6','chrVII':'7','chrVIII':'8','chrIX':'9','chrX':'10','chrXI':'11','chrXII':'12','chrXIII':'13','chrXIV':'14','chrXV':'15','chrXVI':'16'}
@@ -64,7 +64,7 @@ def movingavg(vals,window):
     
     return movavgforvals
     
-# This function runs lowess function for vals using frac f  and delta d specified
+# This function runs lowess function for vals using frac f  and delta d specified, used f = 0.01 and d= 0.001
 def lowessforWC(vals,f,d):
     valslow = sm.nonparametric.lowess(vals,range(1,len(vals)+1),frac=f,delta=d*len(vals))
     return [i[1] for i in valslow]
@@ -227,6 +227,42 @@ def groupOriginsTogetherForWTandMUT(poWT,poMUT):
         
     return grpOrgs
 
+# This function looks at the watson crick ratio at each known origin and writes it
+# into a file about 10000 bases away
+def originsWCRatioWriteFile(originsfile,wcratiofile,window,writefile):
+    with open(originsfile) as f:
+        origins = [line.strip().split('\t') for line in f]
+        
+    originsToRet = [[i[0],int(i[1]),int(i[2])] for i in origins if i[5]=='Confirmed' and int(i[1])-window > 0 and int(i[2])+window < yeastsize[i[0]]]
+    
+    with open(writefile,'w') as fw:
+        for c in range(1,17):
+            chromosome = str(c)
+            with open(wcratiofile) as f:
+                wcratiosforchrom = [float(line.strip().split('\t')[2]) for line in f if line.strip().split('\t')[0]==chromosome]
+            print(len(wcratiosforchrom))
+            originsforchrom = [i for i in originsToRet if i[0]==chromosome]
+            for t in originsforchrom:
+                start = t[1]-window
+                end = t[1]+window
+                fw.write(t[0]+'\t'+str(t[1]) + '\t' + str(t[2]) + '\t')
+                listToWrite = [str(i) for i in wcratiosforchrom[start:end]]
+                fw.write('\t'.join(listToWrite))
+                fw.write('\n')
+
+# This function calculates the average watson crick ratio for every base pair 
+# away +window and -window away from the origin 
+def originsWCRatioMean(originsWCRatiofile,originsToExclude,window):
+    with open(originsWCRatiofile) as f:
+        wcratios = [line.strip().split('\t') for line in f]
+    print(len(wcratios))
+    wcratiosToInclude = [wcratios[i] for i in range(len(wcratios)) if i+1 not in originsToExclude]
+    print(len(wcratiosToInclude))
+    avgratios = []
+    for r in range(3,2*window+3):
+        ratiosforr = [float(i[r]) for i in wcratiosToInclude]
+        avgratios.append(np.mean(ratiosforr))
+    return avgratios
 
 ###################################################################################
 
@@ -435,6 +471,7 @@ def removeRegionsFoundWithinTransposableElements(labelledtroughsfile,transfile,w
     with open(labelledtroughsfile) as f:
         troughs = [line.strip().split('\t') for line in f][1:]
     with open(writefile,'w') as fw:
+        fw.write('Chr' + '\t' + 'WT O1' + '\t' + 'WT O2' + '\t' + 'MUT O1' + '\t' + 'MUT O2' + '\t' + 'WT Term Ratio' + '\t' + 'MUT Term Ratio' + '\t' + 'Corr Coeff' + '\t' + 'Euclidean Dist' + '\t' + 'FirstDer Corr' + '\t' + 'FirstDer Dist' + '\t' + 'SecDer Corr' + '\t' + 'SecDer Dist' + '\n')
         for i in troughs:
             chrm = i[0]
             firsttroughStart = int(i[1])
@@ -516,14 +553,13 @@ def overlappingDiffTroughs(valsforWT,valsforMUT,window,corrcoefflim,midptlim):
 # This function grabs the tRNA genes found within a window around a region. 
 # The region contains the chromosome and the start and end coordinate 
 def tRNAGenesFoundInRegion(trnagenesfile,region,window):
-    with open(trnagenesfile) as f:
-        trnas = [line.strip().split('\t') for line in f]
+    trnas = wcs.extractStartEndChromStrandFortRNAs(trnagenesfile)
     
     chromosome = region[0]
     start = region[1]
     end = region[2]
     
-    validtrnasForRegion = [i for i in trnas if i[1]==chromosome and ( (int(i[2]) <= end+window and int(i[2]) >= start-window) or (int(i[3]) <= end+window and int(i[3]) >= start-window) ) ]
+    validtrnasForRegion = [i for i in trnas if i[0]==chromosome and ( (int(i[1]) <= end+window and int(i[1]) >= start-window) or (int(i[2]) <= end+window and int(i[2]) >= start-window) ) ]
     
     return validtrnasForRegion
     
@@ -562,32 +598,116 @@ def tRNAGenesWCRatioWriteFile(trnagenesfile,wcratiofile,window,writefile):
                 
 # This function calculates the average watson crick ratio for every base pair 
 # away +500 and =500 away from the tRNA gene 
-def tRNAGenesWCRatioMeanForStrand(trnageneWCRatiofile,strand,window):
+def tRNAGenesWCRatioMeanForStrand(trnageneWCRatiofile,strand,tRNAsToExclude,window):
     with open(trnageneWCRatiofile) as f:
         wcratios = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
+    print(len(wcratios))
+    wcratiosToInclude = [wcratios[i] for i in range(len(wcratios)) if i+1 not in tRNAsToExclude]
+    print(len(wcratiosToInclude))
     avgratios = []
     for r in range(4,2*window+4):
-        ratiosforr = [float(i[r]) for i in wcratios]
+        ratiosforr = [float(i[r]) for i in wcratiosToInclude]
         avgratios.append(np.mean(ratiosforr))
     return avgratios
     
 # This function calculates the average watson crick ratio for every base pair 
 # away +500 and =500 away from the tRNA gene 
-def tRNAGenesDiffTwoStrainsWCRatioMeanForStrand(trnageneWCRatiofile1,trnageneWCRatiofile2,strand,window):
+def tRNAGenesDiffTwoStrainsWCRatioMeanForStrand(trnageneWCRatiofile1,trnageneWCRatiofile2,strand,tRNAsToExclude,window):
     with open(trnageneWCRatiofile1) as f:
         wcratios1 = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
     with open(trnageneWCRatiofile2) as f:
         wcratios2 = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
+    print(len(wcratios1))
+    print(len(wcratios2))
+    wcratiosToInclude1 = [wcratios1[i] for i in range(len(wcratios1)) if i+1 not in tRNAsToExclude]
+    wcratiosToInclude2 = [wcratios2[i] for i in range(len(wcratios2)) if i+1 not in tRNAsToExclude]
+    print(len(wcratiosToInclude1))
+    print(len(wcratiosToInclude2))
     oneminustwo = []
-    for r in range(len(wcratios1)):
-        w = wcratios1[r][4:]
-        m = wcratios2[r][4:]
+    for r in range(len(wcratiosToInclude1)):
+        w = wcratiosToInclude1[r][4:]
+        m = wcratiosToInclude2[r][4:]
         oneminustwo.append([float(i)-float(j) for i,j in zip(w,m)])
     avgratios = []
     for r in range(2*window):
         ratiosforr = [float(i[r]) for i in oneminustwo]
         avgratios.append(np.mean(ratiosforr))
     return avgratios
+
+# This function spits out a plot of wc ratio of trnas found in Similar troughs
+# and Dissimilar troughs.
+def tRNAGenesWCRatioWithinTroughs(trnagenesfile,trnageneWCRatiofile1,trnageneWCRatiofile2,strand,tRNAsToExclude,troughpairfile,window1,window2):
+    trnasFound = tRNAGenesFoundInMultipleRegions(trnagenesfile,troughpairfile,window1)
+    trnas = []
+    for i in trnasFound:
+        trnas.extend([[str(j[0]),str(j[1]),str(j[2]),str(j[3])] for j in i[1]])
+    print(len(trnas))  
+    with open(trnageneWCRatiofile1) as f:
+        wcratios1 = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
+    with open(trnageneWCRatiofile2) as f:
+        wcratios2 = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
+    wcratiosToInclude1 = [wcratios1[i] for i in range(len(wcratios1)) if i+1 not in tRNAsToExclude]
+    wcratiosToInclude2 = [wcratios2[i] for i in range(len(wcratios2)) if i+1 not in tRNAsToExclude]
+    print(len(wcratiosToInclude1))
+    print(len(wcratiosToInclude2))
+    wcratiosFortrnas1 = [i for i in wcratiosToInclude1 if i[0:4] in trnas]
+    wcratiosFortrnas2 = [i for i in wcratiosToInclude2 if i[0:4] in trnas]
+    print(len(wcratiosFortrnas1))
+    print(len(wcratiosFortrnas2))
+    avgratios1 = []
+    avgratios2 = []
+    for r in range(4,2*window2+4):
+        ratiosforr1 = [float(i[r]) for i in wcratiosFortrnas1]
+        avgratios1.append(np.mean(ratiosforr1))
+        ratiosforr2 = [float(i[r]) for i in wcratiosFortrnas2]
+        avgratios2.append(np.mean(ratiosforr2))
+    
+    return [avgratios1,avgratios2]
+    #return np.array(avgratios2) - np.array(avgratios1)
+    
+# This function calculate the number of tRNAs found per base
+def calculateNumtRNAsFoundPerBase(tRNAsgenesfile,troughpairfile,window,NumPerBase):
+    trnasFound = tRNAGenesFoundInMultipleRegions(tRNAsgenesfile,troughpairfile,window)
+    if NumPerBase:    
+        return [len(i[1])/float(i[0][2]-i[0][1]) for i in trnasFound]
+    else:
+        trnas = []
+        for i in trnasFound:
+            trnas.extend([[j[1],j[2],j[3],j[4]] for j in i[1]])
+        return trnas
+
+# This function spits out a plot of tRNAs found in similar and dissimilar troughs
+# of two strains
+def plotwcratiotRNAsWithinTroughs(strain1,strain2,strand,window1,window2,plotall):
+    trnageneWCRatiofile1 = '../TestData/' + strain1 + 'tRNAGenesRawWCRatio-' + str(window2) + '.txt'
+    trnageneWCRatiofile2 = '../TestData/' + strain2 + 'tRNAGenesRawWCRatio-' + str(window2) + '.txt'
+    if strand=='W':
+        tRNAsToExclude = [1,2,4,13,15,17,66,70,114,115,119,120]
+    else:
+        tRNAsToExclude = [5,7,8,31,33,35,39,40,57,59,64,111,113,114,124]
+    troughpairfileSim = '../TestData/SimilarTroughs' + strain1 + strain2 + 'WOTransposons.txt'
+    troughpairfileDissim = '../TestData/DissimilarTroughs' + strain1 + strain2 + 'WOTransposons.txt'
+    wcratiosSim = tRNAGenesWCRatioWithinTroughs('DataToUse/tRNAGenes.txt',trnageneWCRatiofile1,trnageneWCRatiofile2,strand,tRNAsToExclude,troughpairfileSim,window1,window2)
+    wcratiosDissim = tRNAGenesWCRatioWithinTroughs('DataToUse/tRNAGenes.txt',trnageneWCRatiofile1,trnageneWCRatiofile2,strand,tRNAsToExclude,troughpairfileDissim,window1,window2)
+    wc_strain1Sim = wcratiosSim[0]
+    wc_strain2Sim = wcratiosSim[1]
+    wc_strain1Dissim = wcratiosDissim[0]
+    wc_strain2Dissim = wcratiosDissim[1]
+    if plotall:
+        plt.plot(range(-window2,window2),wc_strain1Sim,label=strain1+'-Similar')
+        plt.plot(range(-window2,window2),wc_strain2Sim,label=strain2+'-Similar')
+        plt.plot(range(-window2,window2),np.array(wc_strain2Sim)-np.array(wc_strain1Sim),label=strain1 + strain2 + '-Diff-Similar')
+        plt.plot(range(-window2,window2),wc_strain1Dissim,label=strain1+'-Dissimilar')
+        plt.plot(range(-window2,window2),wc_strain2Dissim,label=strain2+'-Dissimilar')
+        plt.plot(range(-window2,window2),np.array(wc_strain2Dissim)-np.array(wc_strain1Dissim),label=strain1 + strain2 + '-Diff-Dissimilar')
+    else:
+        plt.plot(range(-window2,window2),np.array(wc_strain2Sim)-np.array(wc_strain1Sim),label=strain1 + strain2 + '-Diff-Similar')
+        plt.plot(range(-window2,window2),np.array(wc_strain2Dissim)-np.array(wc_strain1Dissim),label=strain1 + strain2 + '-Diff-Dissimilar')
+    plt.xlim(-window2,window2)
+    plt.xlabel('Bases')
+    plt.ylabel('Watson Crick Log 2 Ratio')
+    plt.axhline(xmax=window2,color='black')
+    plt.axvline(x=0,color='black')
 # This function counts number of CNG repeats found within a window around a 
 # region. The region should contain the chromosome and start and end coordinate
 def cngrepeatsFoundInRegion(cngreps,region,window):

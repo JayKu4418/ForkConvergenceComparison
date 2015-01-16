@@ -12,6 +12,7 @@ import watsoncrickRatio as wcr
 import random
 import ManipulateSeqData.findrepeats as fr
 yeastsize = {'1':230218,'2':813184,'3':316620,'4':1531933,'5':576874,'6':270161,'7':1090940,'8':562643,'9':439888,'10':745751,'11':666816,'12':1078177,'13':924431,'14':784333,'15':1091291,'16':948066,'Total':12157105}
+trnatrans = {'tA':'Alanine','tF':'Phenylalanine','tL':'Leucine','tI':'Isoleucine','tM':'Methionine','tV':'Valine','tS':'Serine','tP':'Proline','tT':'Threonine','tY':'Tyrosine','tH':'Histidine','tQ':'Glutamine','tN':'Asparagine','tK':'Lysine','tD':'Aspartic acid','tE':'Glutamic acid','tC':'Cysteine','tW':'Tryptophan','tR':'Arginine','tG':'Glycine','tX':'Undetermined'}
 #import matplotlib.pyplot as plt
 #######################################################################################################################
 # FUNCTIONS
