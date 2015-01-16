@@ -1,0 +1,228 @@
+#################TOEXECUTE##############################
+source('~/Documents/SeqData/DSBioinformaticsSpyder/CompareOkazakiFragDist/ForkConvergenceComparison/ClusteringScripts/clusterTroughs.R')
+library(reshape2)
+library(ggplot2)
+setwd("~/Documents/SeqData/DSBioinformaticsSpyder/CompareOkazakiFragDist/ForkConvergenceComparison/DataCreated")
+
+
+###################RRM3D and CDC9DEG##############################################
+alltroughs <- readTroughComparisonsAndAddTroughNames("troughPairsForcdc9degrrm3dWOTransposons.txt",F,"")
+bp.corr.coeff <- boxplot(alltroughs$Corr.Coeff)
+bp.euc.dist <- boxplot(alltroughs$Euclidean.Dist)
+toexclude1 <- which(alltroughs$Corr.Coeff < bp.corr.coeff$stats[[1]])
+toexclude2 <- which(alltroughs$Euclidean.Dist > bp.euc.dist$stats[[5]])
+alltroughsLess1 <- alltroughs[-c(toexclude1,toexclude2),]
+troughsJustFeats <- minimizeColsInTroughs(alltroughsLess1,F)
+silhouetteWidthKmeans(troughsJustFeats[,2:6],10)
+#clusts <- clusterTroughsUsingHierarchical(troughsJustFeats)
+#siggroups = cutree(clusts, k=2)
+#table(siggroups)
+#grp1 <- names(siggroups[siggroups==1])
+#grp2 <- names(siggroups[siggroups==2])
+#troughsInGrp1 <- troughsJustFeats[grp1,]
+#clustsRedo <- clusterTroughsUsingHierarchical(troughsJustFeats[grp1,])
+#siggroupsRedo = cutree(clustsRedo, k=4)
+#table(siggroupsRedo)
+#clusts <- list()
+#clusts[[1]] <- names(siggroupsRedo[siggroupsRedo==1])
+#clusts[[2]] <- names(siggroupsRedo[siggroupsRedo==2])
+#clusts[[3]] <- names(siggroupsRedo[siggroupsRedo==3])
+#clusts[[4]] <- names(siggroupsRedo[siggroupsRedo==4])
+#tocluster <- data.frame(troughsJustFeats[,4])
+#rownames(tocluster) <- rownames(troughsJustFeats)
+clusts <- kmeans.cluster.grps(troughsJustFeats,2)
+
+showboxplotsForFeat(troughsJustFeats,clusts,'WTMUTdiff',TRUE)
+showboxplotsForFeat(troughsJustFeats,clusts,'Corr.Coeff')
+showboxplotsForFeat(troughsJustFeats,clusts,'Euclidean.Dist')
+showboxplotsForFeat(troughsJustFeats,clusts,'FirstDer.Corr')
+showboxplotsForFeat(troughsJustFeats,clusts,'FirstDer.Dist')
+showboxplotsForFeat(troughsJustFeats,clusts,'SecDer.Corr')
+showboxplotsForFeat(troughsJustFeats,clusts,'SecDer.Dist')
+
+x=1
+y=2
+boxplot.individual.feat("WTMUTdiff",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-5)
+boxplot.individual.feat("Corr.Coeff",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="less",sideval=1,lineval=-12)
+boxplot.individual.feat("Euclidean.Dist",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-12)
+boxplot.individual.feat("FirstDer.Corr",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="less",sideval=1,lineval=-12)
+boxplot.individual.feat("FirstDer.Dist",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-12)
+boxplot.individual.feat("SecDer.Corr",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="less",sideval=1,lineval=-12)
+boxplot.individual.feat("SecDer.Dist",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-12)
+
+rand.Dissim.troughs <- clusts[[1]][sample(x = 1:80,size = 50,replace = FALSE)]
+write.table(alltroughs[clusts[[1]],],file = 'DissimilarTroughscdc9degrrm3dWOTransposons.txt',quote = FALSE,sep = '\t',row.names = FALSE,col.names = TRUE)
+write.table(alltroughs[clusts[[2]],],file = 'SimilarTroughscdc9degrrm3dWOTransposons.txt',quote = FALSE,sep = '\t',row.names = FALSE,col.names = TRUE)
+write.table(alltroughs[rand.Dissim.troughs,],file = 'DissimilarTroughscdc9degrrm3dWOTransposons-LimitRandom50.txt',quote = FALSE,sep = '\t',row.names = FALSE,col.names = TRUE)
+
+trnas_cdc9deg_rrm3d_sim = c(0.0, 2.4508602519484337e-05, 0.0, 0.0, 8.624035186063559e-05, 1.2838288912853695e-05, 0.0, 0.0, 7.512019230769231e-05, 3.810539953511413e-05, 2.3936042893388866e-05, 0.0, 6.989585517578807e-05, 0.0, 6.235191420376606e-05, 9.400852343945851e-05, 0.0, 0.00011396660778391932, 0.00010005252757697791, 0.0, 9.556574923547401e-05, 0.0, 0.0, 4.2707666026051675e-05, 0.0, 4.694394892498357e-05, 2.2616247512212774e-05, 6.020832078993317e-05, 4.040077569489334e-05, 0.0, 2.23929059274022e-05, 1.653493832468005e-05, 0.0, 0.0, 3.555260600602024e-05, 4.116454497741096e-05, 0.0, 0.0, 0.0, 1.0931590109097269e-05, 2.691717584990983e-05, 7.883637510347274e-05, 0.0, 9.98302885095338e-05, 3.6260787584306334e-05, 7.81677479871805e-05, 0.0, 0.0, 0.0, 0.0)
+trnas_cdc9deg_rrm3d_dissim = c(1.2973533990659056e-05, 1.480023384369473e-05, 6.0779189205616e-05, 0.0, 0.0, 8.646529859349781e-05, 1.718035941311892e-05, 2.099737532808399e-05, 0.0, 2.440304061886111e-05, 3.9479917881770806e-05, 0.0, 5.768676088837612e-05, 7.745933384972889e-05, 2.6140829361379537e-05, 0.0, 1.8743439796071373e-05, 9.361250663088588e-05, 2.0256856946076248e-05, 3.9485503884386444e-05, 2.5834452826289138e-05, 1.2081672103419113e-05, 2.8930441574973238e-05, 3.127492220363102e-05, 7.166660694449422e-05, 6.300204756654591e-05, 7.471189226545135e-05, 1.092669281788481e-05, 5.8234334963894714e-05, 1.2415574096146206e-05, 0.0, 1.5931938757627417e-05, 0.0, 3.681071928145476e-05, 1.443918216472219e-05, 3.097797466001673e-05, 1.593320799209713e-05, 2.340659597874681e-05, 1.3899699766485044e-05, 6.604409103517508e-05, 0.00011808327232364263, 7.783615489394824e-05, 6.897027381198704e-05, 2.7536830510808205e-05, 1.4071624569056497e-05, 1.8283541156251142e-05, 0.00011405543093943657, 4.278929126670565e-05, 2.0956013328024476e-05, 1.9845207382417148e-05, 2.6369917198459995e-05, 2.553756575923183e-05, 2.0182042019011484e-05, 0.0, 2.3343760212895093e-05, 2.8179333276974668e-05, 4.142902517503763e-05, 2.5683832027738537e-05, 2.636122790599586e-05, 9.005439285328339e-06, 3.611346851808382e-05, 0.0, 0.0, 0.0, 0.0, 0.0, 1.6658337497917707e-05, 3.958279731628634e-05, 2.0070245860511792e-05, 0.0, 1.1421914084362257e-05, 1.3635495922986718e-05, 0.0, 0.0, 1.0304073200136014e-05, 0.0, 0.0, 5.076399817249606e-05, 0.0, 4.347826086956522e-05)
+trnas_cdc9deg_rrm3d_dissim_lim50 = c(2.0256856946076248e-05, 2.8930441574973238e-05, 5.076399817249606e-05, 0.0, 1.718035941311892e-05, 0.0, 0.0, 0.0, 0.00011405543093943657, 3.958279731628634e-05, 1.480023384369473e-05, 2.636122790599586e-05, 6.604409103517508e-05, 0.0, 2.440304061886111e-05, 2.5683832027738537e-05, 1.3635495922986718e-05, 7.471189226545135e-05, 0.0, 4.142902517503763e-05, 7.783615489394824e-05, 1.443918216472219e-05, 1.4071624569056497e-05, 0.0, 0.0, 2.553756575923183e-05, 2.0182042019011484e-05, 2.5834452826289138e-05, 7.166660694449422e-05, 1.2973533990659056e-05, 2.3343760212895093e-05, 2.7536830510808205e-05, 0.0, 2.0956013328024476e-05, 9.361250663088588e-05, 0.0, 1.8283541156251142e-05, 6.300204756654591e-05, 1.2081672103419113e-05, 6.897027381198704e-05, 2.340659597874681e-05, 1.5931938757627417e-05, 3.611346851808382e-05, 2.6140829361379537e-05, 0.0, 2.099737532808399e-05, 4.278929126670565e-05, 1.2415574096146206e-05, 3.127492220363102e-05, 0.0)
+boxplot(trnas_cdc9deg_rrm3d_sim,trnas_cdc9deg_rrm3d_dissim_lim50)
+wilcox.test(trnas_cdc9deg_rrm3d_sim,trnas_cdc9deg_rrm3d_dissim_lim50,alternative='less',correct=FALSE)$p.value
+
+
+trnas_sim <- c('tC(GCA)B', 'tE(UUC)B', 'tP(AGG)C', 'tN(GUU)C', 'tG(GCC)D1', 'tA(AGC)D', 'tT(AGU)D', 'tS(AGA)D1', 'tV(UAC)D', 'tS(UGA)E', 'tA(UGC)E', 'tG(GCC)F2', 'tS(GCU)F', 'tE(UUC)G2', 'tR(UCU)G1', 'tV(AAC)G1', 'tT(AGU)H', 'tS(AGA)H', 'tT(AGU)I1', 'tI(AAU)I1', 'tE(CUC)I', 'tI(AAU)I2', 'tD(GUC)I1', 'tT(AGU)I2', 'tD(GUC)I2', 'tD(GUC)J1', 'tN(GUU)K', 'tL(UAA)K', 'tR(UCU)K', 'tK(CUU)K', 'tA(AGC)K1', 'tW(CCA)K', 'tV(AAC)K2', 'tV(AAC)L', 'tL(UAG)L2', 'tI(AAU)L1', 'tD(GUC)L2', 'tE(UUC)L', 'tR(CCG)L', 'tK(UUU)L', 'tF(GAA)N', 'tL(CAA)N', 'tP(AGG)N', 'tN(GUU)N2', 'tG(GCC)O2', 'tY(GUA)O', 'tP(UGG)O1', 'tK(UUU)O', 'tP(UGG)O2', 'tN(GUU)O2')
+trnas_dissim <- c('tP(UGG)A', 'tI(AAU)B', 'tG(GCC)B', 'tV(UAC)B', 'tL(UAA)B2', 'tQ(UUG)B', 'tR(UCU)B', 'tD(GUC)B', 'tG(GCC)C', 'tM(CAU)C', 'tK(CUU)C', 'tQ(UUG)C', 'tS(CGA)C', 'tK(UUU)D', 'tA(AGC)D', 'tR(UCU)D', 'tD(GUC)D', 'tR(ACG)D', 'tG(GCC)E', 'tS(AGA)E', 'tM(CAU)E', 'tQ(UUG)E2', 'tK(CUU)E1', 'tR(UCU)E', 'tE(UUC)E1', 'tH(GUG)E1', 'tQ(UUG)E1', 'tE(UUC)E2', 'tH(GUG)E2', 'tK(CUU)E2', 'tV(AAC)E1', 'tP(UGG)F', 'tV(AAC)G3', 'tH(GUG)G1', 'tK(UUU)G1', 'tK(CUU)G1', 'tK(CUU)G2', 'tL(CAA)G1', 'tW(CCA)G1', 'tH(GUG)G2', 'tE(UUC)G1', 'tL(CAA)G2', 'tF(GAA)G', 'tT(UGU)G1', 'tL(GAG)G', 'tK(UUU)G2', 'tC(GCA)G', 'tN(GUU)G', 'tR(UCU)G3', 'tI(AAU)G', 'tA(AGC)G', 'tG(GCC)G1', 'tL(CAA)G3', 'tK(CUU)G3', 'tW(CCA)G2', 'tG(GCC)G2', 'tQ(UUG)H', 'tA(AGC)H', 'tF(GAA)H1', 'tF(GAA)H2', 'tT(UGU)H', 'tV(CAC)H', 'tT(AGU)I1', 'tS(UGA)I', 'tK(CUU)I', 'tE(UUC)J', 'tA(AGC)J', 'tR(ACG)J', 'tY(GUA)J1', 'tR(UCU)J1', 'tD(GUC)J2', 'tD(GUC)J3', 'tR(UCU)J2', 'tV(AAC)J', 'tM(CAU)J1', 'tG(GCC)J1', 'tK(CUU)J', 'tW(CCA)J', 'tM(CAU)J2', 'tL(UAA)J', 'tM(CAU)J3', 'tS(AGA)J', 'tG(GCC)J2', 'tR(CCU)J', 'tD(GUC)J4', 'tY(GUA)J2', 'tL(UAG)J', 'tE(UUC)K', 'tW(CCA)K', 'tV(AAC)K1', 'tH(GUG)K', 'tL(CAA)K', 'tR(ACG)K', 'tD(GUC)K', 'tA(AGC)K2', 'tK(UUU)K', 'tP(UGG)L', 'tS(AGA)L', 'tA(UGC)L', 'tR(ACG)L', 'tS(GCU)L', 'tR(UCU)M2', 'tS(AGA)M', 'tE(UUC)M', 'tA(AGC)M1', 'tF(GAA)M', 'tD(GUC)M', 'tM(CAU)M', 'tV(AAC)M3', 'tR(UCU)M1', 'tA(AGC)M2', 'tQ(CUG)M', 'tG(GCC)O1', 'tN(GUU)O1', 'tS(GCU)O', 'tR(ACG)O', 'tT(AGU)O2', 'tA(UGC)O', 'tP(UGG)O3', 'tM(CAU)P', 'tF(GAA)P1', 'tG(GCC)P1', 'tK(CUU)P', 'tF(GAA)P2', 'tS(UGA)P', 'tT(UGU)P', 'tK(UUU)P', 'tC(GCA)P2')
+rrm3d.WC.ratios <- read.table('rrm3dtRNAGenesRawWCRatio-1000.txt',header=F)
+rownames(rrm3d.WC.ratios) <- trnas$Name
+cdc9deg.trnas.wc.ratio.sim <- cdc9deg.WC.ratios[trnas_sim,]
+cdc9deg.trnas.wc.ratio.dissim <- cdc9deg.WC.ratios[trnas_dissim,]
+rrm3d.trnas.wc.ratio.sim <- rrm3d.WC.ratios[trnas_sim,]
+rrm3d.trnas.wc.ratio.dissim <- rrm3d.WC.ratios[trnas_dissim,]
+colmean.cdc9deg.sim <- apply(cdc9deg.trnas.wc.ratio.sim[,5:2004],2,mean)
+colmean.cdc9deg.dissim <- apply(cdc9deg.trnas.wc.ratio.dissim[,5:2004],2,mean)
+colmean.rrm3d.sim <- apply(rrm3d.trnas.wc.ratio.sim[,5:2004],2,mean)
+colmean.rrm3d.dissim <- apply(rrm3d.trnas.wc.ratio.dissim[,5:2004],2,mean)
+###################PIF1M2 and CDC9DEG##############################################
+alltroughs <- readTroughComparisonsAndAddTroughNames("troughPairsForcdc9degpif1m2WOTransposons.txt",F,"")
+bp.corr.coeff <- boxplot(alltroughs$Corr.Coeff)
+bp.euc.dist <- boxplot(alltroughs$Euclidean.Dist)
+toexclude1 <- which(alltroughs$Corr.Coeff < bp.corr.coeff$stats[[1]])
+toexclude2 <- which(alltroughs$Euclidean.Dist > bp.euc.dist$stats[[5]])
+alltroughsLess1 <- alltroughs[-c(toexclude1,toexclude2),]
+troughsJustFeats <- minimizeColsInTroughs(alltroughsLess1,F)
+silhouetteWidthKmeans(troughsJustFeats[,2:6],10)
+clusts <- kmeans.cluster.grps(troughsJustFeats,2)
+
+showboxplotsForFeat(troughsJustFeats,clusts,'WTMUTdiff',TRUE)
+showboxplotsForFeat(troughsJustFeats,clusts,'Corr.Coeff')
+showboxplotsForFeat(troughsJustFeats,clusts,'Euclidean.Dist')
+showboxplotsForFeat(troughsJustFeats,clusts,'FirstDer.Corr')
+showboxplotsForFeat(troughsJustFeats,clusts,'FirstDer.Dist')
+showboxplotsForFeat(troughsJustFeats,clusts,'SecDer.Corr')
+showboxplotsForFeat(troughsJustFeats,clusts,'SecDer.Dist')
+
+x=2
+y=1
+boxplot.individual.feat("WTMUTdiff",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-5)
+boxplot.individual.feat("Corr.Coeff",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="less",sideval=1,lineval=-12)
+boxplot.individual.feat("Euclidean.Dist",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-12)
+boxplot.individual.feat("FirstDer.Corr",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="less",sideval=1,lineval=-12)
+boxplot.individual.feat("FirstDer.Dist",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-12)
+boxplot.individual.feat("SecDer.Corr",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="less",sideval=1,lineval=-12)
+boxplot.individual.feat("SecDer.Dist",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-12)
+
+
+
+write.table(alltroughs[clusts[[2]],],file = 'DissimilarTroughscdc9degpif1m2WOTransposons.txt',quote = FALSE,sep = '\t',row.names = FALSE,col.names = TRUE)
+write.table(alltroughs[clusts[[1]],],file = 'SimilarTroughscdc9degpif1m2WOTransposons.txt',quote = FALSE,sep = '\t',row.names = FALSE,col.names = TRUE)
+
+
+trnas_cdc9deg_pif1m2_sim <- c(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 8.70359893816093e-05, 8.629865086442482e-05, 1.713296897219319e-05, 2.096480010063104e-05, 0.0, 0.0, 2.410509822827528e-05, 3.8452664769668536e-05, 3.912056959549331e-05, 2.372479240806643e-05, 4.03648986841043e-05, 0.0, 0.0, 0.0, 2.500875306357225e-05, 5.768676088837612e-05, 7.689941556444171e-05, 0.0, 6.989585517578807e-05, 0.0, 1.8743439796071373e-05, 9.401146939926671e-05, 0.0, 6.276084978190605e-05, 2.5961213946364132e-05, 2.8656853286463458e-05, 9.426551453260015e-05, 3.1008713448479025e-05, 0.0, 7.245064299945662e-05, 6.300204756654591e-05, 7.484049619248976e-05, 0.0, 0.00011431184270690443, 0.0, 2.9850746268656717e-05, 0.0, 0.0, 1.4352762189083289e-05, 7.566013467503972e-05, 0.0, 3.074510768473966e-05, 9.575181130509719e-05, 0.0, 0.0, 1.5837820715869496e-05, 2.3624465496468143e-05, 0.00011783281879669125, 7.844983133286264e-05, 6.935173466026319e-05, 4.688782088852421e-05, 1.813598360507082e-05, 2.2352362644731548e-05, 6.234802668495543e-05, 2.2405449005198063e-05, 0.00011527377521613833, 1.6539587502687682e-05, 0.0, 4.2870003858300345e-05, 1.947154234086882e-05, 0.0, 2.5538870160384105e-05, 3.56641860243943e-05, 2.0125178610960174e-05, 2.314171989262242e-05, 2.779785400567076e-05, 0.0, 2.532671461857968e-05, 2.9877502240812668e-05, 2.6006111436187505e-05, 3.611346851808382e-05, 0.0, 0.0, 0.0, 2.6695854133853012e-05, 8.016032064128256e-05, 0.0, 0.0, 1.6606881891855986e-05, 3.9515539485902833e-05, 9.719747286570549e-05, 0.0, 3.6545700398348135e-05, 7.593879333257394e-05, 0.0, 0.0, 4.339901050256054e-05, 0.0, 0.0, 1.9681939851991812e-05, 0.0, 0.0, 2.745442565341533e-05, 0.0, 4.329800937401903e-05)
+trnas_cdc9deg_pif1m2_dissim <- c(1.2967309412969902e-05, 1.4770503304900114e-05, 0.0, 6.044852807834129e-05, 2.4596918006173827e-05, 1.2874818143193727e-05, 0.0, 0.0, 1.7159133806925426e-05, 2.6155187445510027e-05, 3.929002917284666e-05, 1.2094677132593945e-05, 1.1013701044098858e-05, 3.82789771857296e-05, 2.632294746817117e-05, 1.5931938757627417e-05, 0.0, 3.684191135836127e-05, 2.0814903470885152e-05, 6.604409103517508e-05, 2.7612486366334857e-05, 1.3956344554234355e-05, 2.2112641797315526e-05, 0.0, 3.0483622673718545e-05, 0.0, 2.6369917198459995e-05, 0.0, 4.1630240206485995e-05, 0.0, 0.0, 8.854807717850407e-06, 0.0, 1.100969954529941e-05, 2.0478794208597e-05, 2.0032051282051282e-05, 0.0, 1.1336968721303297e-05, 1.3635495922986718e-05, 0.0, 1.0379150362751304e-05, 3.265759329866186e-05, 0.0)
+boxplot(trnas_cdc9deg_pif1m2_sim,trnas_cdc9deg_pif1m2_dissim)
+wilcox.test(trnas_cdc9deg_pif1m2_sim,trnas_cdc9deg_pif1m2_dissim,alternative='less',correct=FALSE)$p.value
+
+
+
+###################RRM3D_PIF1M2 and CDC9DEG##############################################
+
+
+
+alltroughs <- readTroughComparisonsAndAddTroughNames("troughPairsForcdc9degrrm3dpif1m2WOTransposons.txt",F,"")
+bp.corr.coeff <- boxplot(alltroughs$Corr.Coeff)
+bp.euc.dist <- boxplot(alltroughs$Euclidean.Dist)
+toexclude1 <- which(alltroughs$Corr.Coeff < bp.corr.coeff$stats[[1]])
+toexclude2 <- which(alltroughs$Euclidean.Dist > bp.euc.dist$stats[[5]])
+alltroughsLess1 <- alltroughs[-c(toexclude1,toexclude2),]
+troughsJustFeats <- minimizeColsInTroughs(alltroughsLess1,F)
+silhouetteWidthKmeans(troughsJustFeats[,2:6],10)
+clusts <- kmeans.cluster.grps(troughsJustFeats,2)
+
+# Take clusters to be randomly picked 80 and then another 80
+#clust1 <- sample(x=c(1:160),size = 80,replace = FALSE)
+#clust2 <- setdiff(c(1:160),clust1)
+#names.clust1 <- rownames(alltroughs[clust1,])
+#names.clust2 <- rownames(alltroughs[clust2,])
+#clusts = list()
+#clusts[[1]] <- names.clust1
+#clusts[[2]] <- names.clust2
+
+showboxplotsForFeat(troughsJustFeats,clusts,'WTMUTdiff',TRUE)
+showboxplotsForFeat(troughsJustFeats,clusts,'Corr.Coeff')
+showboxplotsForFeat(troughsJustFeats,clusts,'Euclidean.Dist')
+showboxplotsForFeat(troughsJustFeats,clusts,'FirstDer.Corr')
+showboxplotsForFeat(troughsJustFeats,clusts,'FirstDer.Dist')
+showboxplotsForFeat(troughsJustFeats,clusts,'SecDer.Corr')
+showboxplotsForFeat(troughsJustFeats,clusts,'SecDer.Dist')
+
+x=1
+y=2
+boxplot.individual.feat("WTMUTdiff",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-5)
+boxplot.individual.feat("Corr.Coeff",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="less",sideval=1,lineval=-12)
+boxplot.individual.feat("Euclidean.Dist",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-12)
+boxplot.individual.feat("FirstDer.Corr",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="less",sideval=1,lineval=-12)
+boxplot.individual.feat("FirstDer.Dist",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-12)
+boxplot.individual.feat("SecDer.Corr",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="less",sideval=1,lineval=-12)
+boxplot.individual.feat("SecDer.Dist",troughsJustFeats,clusts[[x]],clusts[[y]],TRUE,alt="greater",sideval=3,lineval=-12)
+
+clust1vals <- alltroughs[clusts[[1]],]
+clust2vals <- alltroughs[clusts[[2]],]
+
+
+write.table(alltroughs[clusts[[1]],],file = 'DissimilarTroughscdc9degrrm3d_pif1m2WOTransposons.txt',quote = FALSE,sep = '\t',row.names = FALSE,col.names = TRUE)
+write.table(alltroughs[clusts[[2]],],file = 'SimilarTroughscdc9degrrm3d_pif1m2WOTransposons.txt',quote = FALSE,sep = '\t',row.names = FALSE,col.names = TRUE)
+
+# Copied over from python
+# Number of tRNA genes found per base pair With Transposons
+zd <- c(1.2965123816932451e-05, 1.4810755570695439e-05, 7.108499395777551e-05, 2.7941546285171422e-05, 6.117031037815486e-05, 0.0, 0.0, 2.446213872478871e-05, 8.647526807333103e-05, 0.0, 2.44143605268619e-05, 3.9197240514267794e-05, 9.311420457190745e-06, 3.801341873681409e-05, 2.6090586516384887e-05, 2.8372282171803625e-05, 5.755395683453237e-05, 7.755094127454972e-05, 2.5959866047091195e-05, 9.355995633868704e-05, 1.994614540740002e-05, 2.4103645676408555e-05, 2.910840941948129e-05, 3.1282749127993365e-05, 6.181615874389565e-05, 7.162682424568e-05, 6.297923259805079e-05, 7.484609771158056e-05, 1.1052899175453721e-05, 8.659758104090293e-05, 1.593447742881272e-05, 3.666630000366663e-05, 9.861689800547324e-05, 3.112501361719346e-05, 1.5954815961197887e-05, 4.6576618537494175e-05, 1.3909947003101918e-05, 6.60414740457007e-05, 0.00016492707867021652, 7.642922653622745e-05, 8.667013347200555e-05, 2.7575176825821397e-05, 1.4094234048850615e-05, 0.00011185682326621924, 5.6902241948332766e-05, 2.104244260673779e-05, 2.0158851751804218e-05, 2.637409009389176e-05, 0.0, 1.1640494953845437e-05, 2.170633499386796e-05, 5.229487335924835e-05, 4.075228722212034e-05, 0.0, 3.298914657077821e-05, 4.8214679303504516e-05, 3.5575161422294955e-05, 3.732875433946769e-05, 1.0967557963543837e-05, 6.32657795398469e-05, 2.3102424599461713e-05, 0.0, 3.3315010077790546e-05, 5.947778504728484e-05, 2.003606491685033e-05, 2.7578979301976035e-05, 1.043231513937573e-05, 2.6736538153039946e-05, 3.2712879060486114e-05, 4.3505688368754214e-05)
+zs <- c(2.088075003654131e-05, 0.00010990822663076331, 3.540031860286742e-05, 0.0, 0.0, 0.0, 1.8742034635280007e-05, 4.591930447560154e-05, 0.0, 3.909533397189046e-05, 0.0, 0.0, 9.63020030816641e-05, 0.0, 1.1402248523408816e-05, 5.203590477429426e-05, 1.7203413157170383e-05, 2.491125365884038e-05, 0.0, 2.788155913678693e-05, 2.5801124929046907e-05, 3.6976778583049845e-05, 9.382916836080442e-05, 0.0, 2.6404731727925644e-05, 0.0, 0.0, 0.0, 0.0, 0.0, 1.9893371528606668e-05, 4.1531257462647826e-05, 0.0, 2.483608185972581e-05, 0.0, 4.169620147604553e-05, 8.614748449345279e-05, 1.2663838409421896e-05, 0.0, 2.11891342119761e-05, 3.825042553598409e-05, 6.0201071579074104e-05, 2.5519969376036748e-05, 1.6601367952719304e-05, 0.0, 7.880841673890771e-05, 2.2661862351848074e-05, 2.2012370952475292e-05, 6.948546016745995e-05, 0.0, 0.0, 1.7152364453439908e-05, 2.2404947012300316e-05, 1.8270179413161837e-05, 2.3379234563860378e-05, 0.0, 2.078353943676608e-05, 2.4945120734384356e-05, 0.0, 2.481143310837634e-05, 0.0, 9.358914365933551e-05, 3.0353619669145544e-05, 3.2196786760681284e-05, 7.224650507531698e-05, 0.0, 1.2662074554294975e-05, 3.895749737036893e-05, 0.0, 0.0)
+boxplot(zs,zd)
+
+# Number of tRNAgenes found per base pair without Transposons
+zs <- c(9.358914365933551e-05, 0.0, 0.0, 1.2662074554294975e-05, 0.0, 3.112501361719346e-05, 4.169620147604553e-05, 0.0, 1.043231513937573e-05, 1.657302905251993e-05, 2.318195516609871e-05, 6.297923259805079e-05, 3.540031860286742e-05, 0.0, 0.0, 0.0, 9.382916836080442e-05, 3.0353619669145544e-05, 0.0, 2.483608185972581e-05, 0.0, 0.0, 2.481143310837634e-05, 0.0, 0.0, 5.318583129454313e-05, 7.224650507531698e-05, 2.2012370952475292e-05, 2.2661862351848074e-05, 8.614748449345279e-05, 1.2797870434359723e-05, 0.0, 0.0, 0.0, 1.3737395939225761e-05, 0.0, 0.0, 2.6736538153039946e-05, 2.689618074233459e-05, 4.476275738585497e-05, 1.0967557963543837e-05, 2.6090586516384887e-05, 0.0, 2.078353943676608e-05, 1.8742034635280007e-05, 3.895749737036893e-05)
+# Diff randoms from trough1
+zs <- c(0.0, 1.7203413157170383e-05, 3.895749737036893e-05, 0.0, 2.689618074233459e-05, 0.0, 0.0, 2.318195516609871e-05, 7.452675510508272e-05, 0.0, 6.948546016745995e-05, 3.112501361719346e-05, 2.2661862351848074e-05, 0.0, 0.00010990822663076331, 2.078353943676608e-05, 5.52008390527536e-05, 1.2797870434359723e-05, 0.0, 2.3379234563860378e-05, 2.5801124929046907e-05, 0.0, 2.6404731727925644e-05, 0.0, 2.5519969376036748e-05, 0.0, 0.0, 0.0, 0.0, 0.0, 2.6736538153039946e-05, 0.0, 0.0, 0.0, 0.0, 0.0, 1.043231513937573e-05, 5.460154522372983e-05, 0.0, 4.476275738585497e-05, 7.880841673890771e-05, 7.822889775483064e-05, 0.0, 5.9591204338239674e-05, 0.0, 9.313299391531106e-05)
+zd <- c(1.2965123816932451e-05, 1.4810755570695439e-05, 6.117031037815486e-05, 0.0, 0.0, 2.446213872478871e-05, 8.647526807333103e-05, 0.0, 2.44143605268619e-05, 3.9197240514267794e-05, 5.755395683453237e-05, 7.755094127454972e-05, 9.355995633868704e-05, 1.994614540740002e-05, 2.910840941948129e-05, 3.1282749127993365e-05, 7.162682424568e-05, 7.484609771158056e-05, 1.1052899175453721e-05, 5.683432793407218e-05, 8.659758104090293e-05, 3.666630000366663e-05, 9.861689800547324e-05, 1.5954815961197887e-05, 4.6576618537494175e-05, 1.3909947003101918e-05, 6.60414740457007e-05, 0.00016492707867021652, 7.642922653622745e-05, 8.667013347200555e-05, 2.7575176825821397e-05, 0.00011185682326621924, 5.6902241948332766e-05, 2.104244260673779e-05, 2.0158851751804218e-05, 2.637409009389176e-05, 0.0, 1.1640494953845437e-05, 4.075228722212034e-05, 0.0, 3.5575161422294955e-05, 3.3315010077790546e-05, 5.947778504728484e-05, 2.003606491685033e-05, 3.2712879060486114e-05, 4.3505688368754214e-05)
+
+zs <- c(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 8.614006374364717e-05, 1.7152364453439908e-05, 2.088075003654131e-05, 1.275949625508785e-05, 0.0, 0.0, 7.450176941702365e-05, 3.89817955015008e-05, 2.3365577830739753e-05, 0.0, 1.720252533071855e-05, 0.0, 1.592128516613861e-05, 4.052767026687471e-05, 0.0, 0.0, 2.482929857231533e-05, 0.0, 5.2031843488214785e-05, 2.5958855214485043e-05, 6.948063227375369e-05, 0.0, 1.8743439796071373e-05, 0.0, 0.0, 6.255082254331645e-05, 5.518865321289943e-05, 2.077878901217637e-05, 2.483608185972581e-05, 1.2051241880475783e-05, 9.360082368724845e-05, 0.0, 6.300204756654591e-05, 7.484049619248976e-05, 0.0, 0.0001095290251916758, 1.26606317655251e-05, 0.0, 1.5931938757627417e-05, 3.0359148729469626e-05, 0.0, 0.0, 0.0, 0.0, 0.0, 2.4946365314573667e-05, 0.0, 3.112549800796813e-05, 9.306365554038963e-05, 0.0, 0.0, 4.6577703253452574e-05, 4.169967891247237e-05, 0.0, 1.4093638131747329e-05, 4.67551898260707e-05, 1.826951183864367e-05, 2.2657754616517504e-05, 5.9630292188431724e-05, 2.200897966370279e-05, 2.2405449005198063e-05, 1.6571930464179773e-05, 0.0, 0.0, 0.0, 2.5538870160384105e-05, 3.539739475174627e-05, 4.1527376923236645e-05, 2.3177656738903696e-05, 2.7896337210924205e-05, 0.0, 2.569769234722722e-05, 5.4470681155867853e-05, 0.0, 2.6404731727925644e-05, 0.0, 0.0, 1.3717421124828532e-05, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0967918837400603e-05, 2.6888948642108095e-05, 0.0, 7.884259076753262e-05, 0.0, 0.0, 3.6971310263235726e-05, 0.0, 9.625874350253482e-05, 0.0, 3.6138918000795055e-05, 7.81677479871805e-05, 0.0, 0.0, 4.4790826838663444e-05, 1.14035487843817e-05, 0.0, 0.0, 1.3502930135839478e-05, 0.0, 2.1187787359366062e-05, 0.0, 1.0430682896809254e-05, 0.0, 2.6745119015779622e-05, 0.0, 0.0)
+zd <- c(1.2965796229546457e-05, 1.4810097524492199e-05, 6.117704637220115e-05, 0.0, 0.0, 2.4464831804281346e-05, 8.646529859349781e-05, 0.0, 2.440304061886111e-05, 3.917727717923604e-05, 5.7550644567219155e-05, 7.753891484288678e-05, 9.357454772301933e-05, 1.994614540740002e-05, 2.9104455892197096e-05, 3.127492220363102e-05, 7.16191294694813e-05, 1.10538765945217e-05, 1.8937241980078023e-05, 5.7726721699474687e-05, 3.6667644470519214e-05, 9.860960457548565e-05, 1.5952016334864728e-05, 1.3905691599571704e-05, 6.604409103517508e-05, 0.00011779950524207798, 7.641170627340109e-05, 6.935173466026319e-05, 2.7579739923052524e-05, 0.00011184848258891954, 4.2671218263281416e-05, 2.104244260673779e-05, 2.0151945670354474e-05, 2.6369917198459995e-05, 0.0, 0.0, 2.0377389248889433e-05, 0.0, 3.55897216883764e-05, 1.6658337497917707e-05, 3.964478274659055e-05, 2.0032653224756354e-05, 3.2710738935592555e-05, 4.351136734471881e-05)
+
+boxplot(zs,zd,names=c("Similar","Dissimilar"),ylab="tRNAGenesPerBase")
+pval <- wilcox.test(zs,zd,alternative='less',correct=FALSE)$p.value
+mtext(paste("p-val=",pval,sep=""),side=3,line=-5)
+
+# Number of G4s found per base pair without Transposons
+zgs <- c(6.239276243955701e-05, 3.4298257648511456e-05, 0.00010487402008337485, 2.532414910858995e-05, 4.7885840157065554e-05, 3.112501361719346e-05, 4.169620147604553e-05, 5.8343057176196036e-05, 7.302620597563011e-05, 8.286514526259965e-05, 4.636391033219742e-05, 3.148961629902539e-05, 3.540031860286742e-05, 8.1113965120995e-05, 6.570302233902759e-05, 5.7520851308599364e-05, 0.0002814875050824133, 9.106085900743663e-05, 4.9331557397267034e-05, 2.483608185972581e-05, 0.0, 9.941346058256288e-05, 7.443429932512901e-05, 0.0, 0.0, 5.318583129454313e-05, 3.612325253765849e-05, 6.603711285742587e-05, 2.2661862351848074e-05, 8.614748449345279e-05, 2.5595740868719446e-05, 6.845564074479737e-05, 3.091094556582486e-05, 0.00010121457489878542, 2.7474791878451522e-05, 0.0001336719689881032, 3.9207998431680065e-05, 2.6736538153039946e-05, 5.379236148466918e-05, 8.952551477170994e-05, 4.387023185417535e-05, 0.0, 8.899172376968942e-05, 2.078353943676608e-05, 9.371017317640003e-05, 7.791499474073786e-05)
+zgd <- c(3.889537145079735e-05, 7.405377785347719e-05, 7.340437245378583e-05, 1.2612249016244577e-05, 7.308979812597757e-05, 4.892427744957742e-05, 5.765017871555402e-05, 3.059008269519022e-05, 3.662154079029285e-05, 1.3065746838089265e-05, 0.00011510791366906474, 0.00011632641191182458, 0.0, 3.989229081480004e-05, 3.881121255930838e-05, 3.1282749127993365e-05, 5.372011818426001e-05, 5.6134573283685424e-05, 4.4211596701814886e-05, 3.788955195604812e-05, 2.886586034696764e-05, 1.8333150001833314e-05, 0.00014792534700820985, 7.977407980598944e-05, 4.6576618537494175e-05, 4.1729841009305755e-05, 1.320829480914014e-05, 7.068303371580708e-05, 0.0, 1.7334026694401108e-05, 5.515035365164279e-05, 0.00011185682326621924, 1.4225560487083191e-05, 9.469099173032006e-05, 0.00016127081401443375, 6.59352252347294e-05, 8.662508662508663e-05, 4.656197981538175e-05, 4.075228722212034e-05, 6.410667350471184e-05, 8.893790355573738e-05, 6.663002015558109e-05, 5.947778504728484e-05, 5.009016229212583e-05, 4.089109882560764e-05, 2.1752844184377107e-05)
+boxplot(zgs,zgd,names=c("Similar","Dissimilar"),ylab="G4QuadsPerBase")
+pval <- wilcox.test(zgs,zgd,alternative='less',correct=FALSE)$p.value
+mtext(paste("p-val=",pval,sep=""),side=3,line=-8)
+
+
+# Number of C[AT]G repeats found per base pair without Transposons
+zcs <- c(0.0, 3.3137820194187624e-05, 2.7037988373664998e-05, 0.0, 0.0, 0.0, 2.6090586516384887e-05, 0.0, 3.7484069270560014e-05, 0.0, 0.0, 3.119638121977851e-05, 4.7885840157065554e-05, 1.5744808149512697e-05, 0.0, 4.311645755184754e-05, 0.0, 6.070723933829109e-05, 0.0, 7.399733609590054e-05, 0.0, 0.0, 0.0, 0.0, 3.4298257648511456e-05, 3.314605810503986e-05, 2.2012370952475292e-05, 0.0, 3.3738191632928474e-05, 1.180010620095581e-05, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5.318583129454313e-05, 0.0, 0.0, 0.0, 1.2662074554294975e-05, 0.0, 1.9603999215840032e-05, 0.0)
+# Diff set of similar troughs
+zcs2 <- c(0.0, 3.4406826314340766e-05, 0.0, 1.0959744857139726e-05, 7.452675510508272e-05, 2.3379234563860378e-05, 0.0, 4.243131430996075e-05, 3.4742730083729977e-05, 0.0, 0.0, 0.0, 4.311645755184754e-05, 0.0, 1.8400279684251202e-05, 4.7885840157065554e-05, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.3202365863962822e-05, 0.0, 0.0, 3.797804868785842e-05, 0.0, 3.8669760247486464e-05, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.2082123416987777e-05, 0.0, 2.962962962962963e-05)
+zcd <- c(1.2965123816932451e-05, 7.405377785347719e-06, 3.670218622689292e-05, 1.2612249016244577e-05, 1.4617959625195516e-05, 3.669320808718306e-05, 2.882508935777701e-05, 0.0, 2.44143605268619e-05, 3.9197240514267794e-05, 8.633093525179857e-05, 0.0, 3.118665211289568e-05, 3.989229081480004e-05, 9.702803139827096e-06, 4.6924123691990054e-05, 0.0, 0.0, 1.1052899175453721e-05, 3.788955195604812e-05, 2.886586034696764e-05, 1.8333150001833314e-05, 0.0, 1.5954815961197887e-05, 0.0, 0.0, 0.0, 2.356101123860236e-05, 0.0, 0.0, 0.0, 0.0, 1.4225560487083191e-05, 4.208488521347558e-05, 0.0, 0.0, 5.197505197505198e-05, 0.0, 0.0, 1.602666837617796e-05, 0.0, 1.6657505038895273e-05, 1.9825928349094945e-05, 3.0054097375275497e-05, 8.178219765121528e-06, 0.0)
+# With 3 repeats AND exactly within trough, so window=0
+zcd0 <- c(9.075586671852716e-05, 3.7026888926738595e-05, 4.893624830252389e-05, 0.00012612249016244576, 4.385387887558655e-05, 6.115534681197177e-05, 8.647526807333103e-05, 9.177024808557065e-05, 0.0001220718026343095, 0.00013065746838089264, 0.00014388489208633093, 9.693867659318716e-05, 6.237330422579136e-05, 0.00011967687244440011, 6.791962197878968e-05, 0.0002033378693319569, 3.581341212284e-05, 5.6134573283685424e-05, 6.631739505272233e-05, 0.00015155820782419247, 8.659758104090293e-05, 0.00010999890001099989, 4.930844900273662e-05, 0.0001276385276895831, 9.315323707498835e-05, 9.736962902171343e-05, 0.00011887465328226125, 4.712202247720472e-05, 0.0001528584530724549, 0.0, 6.893794206455349e-05, 7.457121551081282e-05, 9.957892340958233e-05, 7.364854912358227e-05, 0.0, 2.637409009389176e-05, 8.662508662508663e-05, 4.656197981538175e-05, 6.112843083318051e-05, 0.00017629335213795757, 3.5575161422294955e-05, 8.328752519447637e-05, 0.00019825928349094947, 0.00011019835704267681, 4.089109882560764e-05, 8.701137673750843e-05)
+zcs0 <- c(0.0, 3.3137820194187624e-05, 8.1113965120995e-05, 8.628127696289905e-05, 4.3073742246726395e-05, 0.0001240571655418817, 7.827175954915466e-05, 7.791499474073786e-05, 0.00011245220781168004, 5.2437010041687425e-05, 9.382916836080442e-05, 0.00012478552487911403, 0.0002873150409423933, 0.00011021365704658889, 4.967216371945162e-05, 0.0001293493726555426, 6.235061831029825e-05, 0.00018212171801487327, 0.0001089375476601771, 0.0001479946721918011, 0.00017113910186199342, 0.00012364378226329943, 8.339240295209106e-05, 0.00015549681231534753, 3.4298257648511456e-05, 0.00019887634863023914, 8.804948380990117e-05, 4.532372470369615e-05, 6.747638326585695e-05, 5.9000531004779045e-05, 2.318195516609871e-05, 4.121218781767728e-05, 0.00013140604467805518, 4.45573229960344e-05, 0.0, 5.4837789817719185e-05, 0.00014238675803150306, 5.8343057176196036e-05, 0.00021274332517817252, 3.612325253765849e-05, 5.119148173743889e-05, 0.00013428827215756492, 1.2662074554294975e-05, 5.216157569687865e-05, 0.00011762399529504019, 2.6736538153039946e-05)
+boxplot(zcs2,zcd,names=c("Similar","Dissimilar"),ylab="C[AT]GRepeatsPerBase")
+pval <- wilcox.test(zcs2,zcd,alternative='less',correct=FALSE)$p.value
+# With 3 repeats and more AND exactly within trough, so window = 0, for C[CG]G Repeats
+zcdCG0 <- c(2.5930247633864902e-05, 2.221613335604316e-05, 1.2234062075630972e-05, 0.0, 2.1926939437793273e-05, 2.446213872478871e-05, 0.0, 1.0196694231730073e-05, 1.220718026343095e-05, 2.613149367617853e-05, 0.0, 1.938773531863743e-05, 3.118665211289568e-05, 5.983843622220006e-05, 0.0, 1.5641374563996683e-05, 0.0, 0.0, 1.1052899175453721e-05, 0.0, 0.0, 0.0, 4.930844900273662e-05, 6.381926384479155e-05, 0.0, 0.0, 1.320829480914014e-05, 2.356101123860236e-05, 3.8214613268113725e-05, 1.7334026694401108e-05, 4.1362765238732097e-05, 0.0, 2.8451120974166383e-05, 3.156366391010668e-05, 2.0158851751804218e-05, 0.0, 1.7325017325017324e-05, 0.0, 0.0, 0.0, 1.7787580711147478e-05, 3.3315010077790546e-05, 0.0, 1.0018032458425165e-05, 8.178219765121528e-06, 3.262926627656566e-05)
+zcsCG0 <- c(0.0, 3.3137820194187624e-05, 0.0, 5.7520851308599364e-05, 0.0, 0.0, 0.0, 0.0, 1.8742034635280007e-05, 0.0, 0.0, 0.0, 4.7885840157065554e-05, 1.5744808149512697e-05, 2.483608185972581e-05, 0.0, 0.0, 0.0, 1.556250680859673e-05, 2.4665778698633517e-05, 0.0, 3.091094556582486e-05, 0.0, 0.0, 0.0, 3.314605810503986e-05, 0.0, 0.0, 0.0, 0.0, 4.636391033219742e-05, 0.0, 0.0, 4.45573229960344e-05, 0.0, 1.0967557963543837e-05, 1.7798344753937883e-05, 2.9171528588098018e-05, 0.0, 3.612325253765849e-05, 1.2797870434359723e-05, 4.476275738585497e-05, 2.532414910858995e-05, 1.043231513937573e-05, 3.9207998431680065e-05, 2.6736538153039946e-05)
+boxplot(zcsCG0,zcdCG0,names=c("Similar","Dissimilar"),ylab="C[CG]GRepeatsPerBase")
+pval <- wilcox.test(zcsCG0,zcdCG0,alternative='less',correct=FALSE)$p.value
+
+
+troughsInWhichtRNAsFound = unique(c('Trough3', 'Trough80', 'Trough81', 'Trough81', 'Trough82', 'Trough83', 'Trough84', 'Trough84', 'Trough84', 'Trough84', 'Trough84', 'Trough85', 'Trough85', 'Trough85', 'Trough85', 'Trough85', 'Trough86', 'Trough86', 'Trough88', 'Trough88', 'Trough88', 'Trough88', 'Trough89', 'Trough89', 'Trough90', 'Trough91', 'Trough91', 'Trough92', 'Trough93', 'Trough94', 'Trough95', 'Trough97', 'Trough97', 'Trough97', 'Trough98', 'Trough101', 'Trough101', 'Trough101', 'Trough102', 'Trough102', 'Trough103', 'Trough105', 'Trough105', 'Trough108', 'Trough109', 'Trough109', 'Trough109', 'Trough110', 'Trough111', 'Trough111', 'Trough111', 'Trough111', 'Trough113', 'Trough114', 'Trough116', 'Trough117', 'Trough117', 'Trough119', 'Trough119', 'Trough122', 'Trough123', 'Trough123', 'Trough129', 'Trough130', 'Trough132', 'Trough132', 'Trough135', 'Trough137', 'Trough138', 'Trough138', 'Trough139', 'Trough139', 'Trough139', 'Trough141', 'Trough141', 'Trough142', 'Trough143', 'Trough143', 'Trough146', 'Trough147', 'Trough150', 'Trough152', 'Trough154', 'Trough156', 'Trough158', 'Trough158', 'Trough158', 'Trough158', 'Trough160', 'Trough160', 'Trough160', 'Trough160', 'Trough5', 'Trough5', 'Trough7', 'Trough7', 'Trough7', 'Trough7', 'Trough7', 'Trough10', 'Trough10', 'Trough13', 'Trough13', 'Trough14', 'Trough14', 'Trough14', 'Trough15', 'Trough16', 'Trough17', 'Trough21', 'Trough21', 'Trough22', 'Trough22', 'Trough23', 'Trough24', 'Trough25', 'Trough25', 'Trough25', 'Trough27', 'Trough29', 'Trough30', 'Trough30', 'Trough33', 'Trough34', 'Trough34', 'Trough35', 'Trough35', 'Trough35', 'Trough35', 'Trough37', 'Trough37', 'Trough38', 'Trough39', 'Trough39', 'Trough41', 'Trough42', 'Trough42', 'Trough42', 'Trough44', 'Trough46', 'Trough46', 'Trough47', 'Trough47', 'Trough47', 'Trough48', 'Trough49', 'Trough50', 'Trough51', 'Trough51', 'Trough51', 'Trough52', 'Trough52', 'Trough52', 'Trough53', 'Trough53', 'Trough55', 'Trough55', 'Trough55', 'Trough55', 'Trough56', 'Trough56', 'Trough56', 'Trough56', 'Trough57', 'Trough57', 'Trough57', 'Trough57', 'Trough58', 'Trough60', 'Trough61', 'Trough61', 'Trough62', 'Trough62', 'Trough63', 'Trough65', 'Trough66', 'Trough68', 'Trough68', 'Trough73', 'Trough74', 'Trough74', 'Trough74', 'Trough74', 'Trough76', 'Trough76', 'Trough77', 'Trough77', 'Trough77'))
+to.discard.num <- rep(0,length(troughsInWhichtRNAsFound))
+for (i in 1:length(troughsInWhichtRNAsFound)){
+  to.discard.num[i] <- as.numeric(unlist(regmatches(troughsInWhichtRNAsFound[i], gregexpr('\\(?[0-9,.]+', troughsInWhichtRNAsFound[i]))))
+}
+tc.withtRNAs = troughComparisons[troughsInWhichtRNAsFound,]
+tc.WithouttRNAs = troughComparisons[-to.discard.num,]
+boxplot(tc.WithouttRNAs$Corr.Coeff,tc.withtRNAs$Corr.Coeff)
+wilcox.test(tc.WithouttRNAs$Corr.Coeff,tc.withtRNAs$Corr.Coeff,alternative = "greater",correct = FALSE)
+boxplot(tc.WithouttRNAs$Euclidean.Dist,tc.withtRNAs$Euclidean.Dist)
+wilcox.test(tc.WithouttRNAs$Euclidean.Dist,tc.withtRNAs$Euclidean.Dist,alternative = "less",correct = FALSE)
+
+# This function will calculate the probability of seeing x number of CNG repeats in a certain length of troughs 
+calcpvalForNumCNGreps <- function(totalnumbases,samplenumbases,successesinpop,successesinsamp,numrepeat){
+  popsize = totalnumbases/(numrepeat*3)
+  samplesize = samplenumbases/(numrepeat*3)
+  return(phyper(successesinsamp-1,successesinpop,popsize-successesinpop,samplesize,lower.tail = FALSE))
+}
