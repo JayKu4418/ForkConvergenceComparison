@@ -2,8 +2,7 @@
 source('~/Documents/SeqData/DSBioinformaticsSpyder/CompareOkazakiFragDist/ForkConvergenceComparison/ClusteringScripts/clusterTroughs.R')
 library(reshape2)
 library(ggplot2)
-setwd("~/Documents/SeqData/DSBioinformaticsSpyder/CompareOkazakiFragDist/ForkConvergenceComparison/DataCreated")
-
+setwd("~/Documents/SeqData/DSBioinformaticsSpyder/CompareOkazakiFragDist/TestData")
 
 ###################RRM3D and CDC9DEG##############################################
 alltroughs <- readTroughComparisonsAndAddTroughNames("troughPairsForcdc9degrrm3dWOTransposons.txt",F,"")
