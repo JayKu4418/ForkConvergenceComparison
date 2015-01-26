@@ -15,6 +15,8 @@ from scipy.stats import pearsonr
 from scipy.spatial import distance
 import ManipulateSeqData.findrepeats as fr
 import wcratiospecificregion as wcs
+import random
+
 #import matplotlib.pyplot as plt
 #import Bio.Statistics as bs
 #from datetime import datetime
@@ -828,7 +830,7 @@ def RNAPolIIGenesWCRatioWriteFile(rnapol2genesfile,wcratiofile,window,writefile)
                 fw.write('\n')
                 
 # This function calculates the average watson crick ratio for every base pair 
-# away +500 and =500 away from the tRNA gene 
+# away +500 and =500 away from the highly transcribed RNA Pol II gene 
 def RNAPolIIGenesWCRatioMeanForStrand(rnapol2geneWCRatiofile,strand,RNAPol2GenesToExclude,window):
     with open(rnapol2geneWCRatiofile) as f:
         wcratios = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
@@ -862,6 +864,41 @@ def RNAPolIIGenesDiffTwoStrainsWCRatioMeanForStrand(rnapol2geneWCRatiofile1,rnap
     avgratios = []
     for r in range(2*window):
         ratiosforr = [float(i[r]) for i in oneminustwo]
+        avgratios.append(np.mean(ratiosforr))
+    return avgratios
+ 
+# This function looks at the watson crick ratio at each tRNA gene and writes it
+# into a file about 10000 bases away
+def RandomSpotsWCRatioWriteFile(numrandomspots,size,wcratiofile,window,writefile):
+    rs = []
+    for i in range(numrandomspots):
+        chromosome = str(random.randint(1,16))
+        randCoord = random.randint(window,yeastsize[chromosome]+1-window)
+    
+        rs.append([chromosome, randCoord,randCoord+size])
+        
+    with open(writefile,'w') as fw:
+        for c in range(1,17):
+            chromosome = str(c)
+            with open(wcratiofile) as f:
+                wcratiosforchrom = [float(line.strip().split('\t')[2]) for line in f if line.strip().split('\t')[0]==chromosome]
+            print(len(wcratiosforchrom))
+            rsforchrom = [i for i in rs if i[0]==chromosome]
+            for t in rsforchrom:
+                start = int(t[1])-window
+                end = int(t[1])+window
+                fw.write(t[0]+'\t'+str(t[1]) + '\t' + str(t[2]) + '\t')
+                listToWrite = [str(i) for i in wcratiosforchrom[start:end]]
+                fw.write('\t'.join(listToWrite))
+                fw.write('\n')
+# This function calculates the average watson crick ratio for every base pair 
+# away +500 and =500 away from the highly transcribed RNA Pol II gene 
+def RandomSpotsWCRatioMeanForStrand(randomspotsWCRatiofile,window):
+    with open(randomspotsWCRatiofile) as f:
+        wcratios = [line.strip().split('\t') for line in f]
+    avgratios = []
+    for r in range(3,2*window+3):
+        ratiosforr = [float(i[r]) for i in wcratios]
         avgratios.append(np.mean(ratiosforr))
     return avgratios
 #############################PLOT#########################################
@@ -977,3 +1014,187 @@ def plotTwoSecDerWatsonCrickRatioFromFile(wcratiofile1,wcratiofile2,chromosome,w
     plt.show()
     
     
+"""   
+convcdc9degW = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/cdc9degConvergentWatsontRNAGenesRawWCRatio-5000.txt','W',[],5000)
+convrrm3dW = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3dConvergentWatsontRNAGenesRawWCRatio-5000.txt','W',[],5000)
+convrrm3dpif1m2W = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3d_pif1m2ConvergentWatsontRNAGenesRawWCRatio-5000.txt','W',[],5000)
+convpif1m2W = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/pif1m2ConvergentWatsontRNAGenesRawWCRatio-5000.txt','W',[],5000)
+divcdc9degW = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/cdc9degDivergentWatsontRNAGenesRawWCRatio-5000.txt','W',[],5000)
+divrrm3dW = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3dDivergentWatsontRNAGenesRawWCRatio-5000.txt','W',[],5000)
+divrrm3dpif1m2W = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3d_pif1m2DivergentWatsontRNAGenesRawWCRatio-5000.txt','W',[],5000)
+divpif1m2W = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/pif1m2DivergentWatsontRNAGenesRawWCRatio-5000.txt','W',[],5000)
+convcdc9degC = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/cdc9degConvergentCricktRNAGenesRawWCRatio-5000.txt','C',[],5000)
+convrrm3dC = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3dConvergentCricktRNAGenesRawWCRatio-5000.txt','C',[],5000)
+convpif1m2C = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/pif1m2ConvergentCricktRNAGenesRawWCRatio-5000.txt','C',[],5000)
+convrrm3dpif1m2C = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3d_pif1m2ConvergentCricktRNAGenesRawWCRatio-5000.txt','C',[],5000)
+divcdc9degC = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/cdc9degDivergentCricktRNAGenesRawWCRatio-5000.txt','C',[],5000)
+divrrm3dC = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3dDivergentCricktRNAGenesRawWCRatio-5000.txt','C',[],5000)
+divpif1m2C = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/pif1m2DivergentCricktRNAGenesRawWCRatio-5000.txt','C',[],5000)
+divrrm3dpif1m2C = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3d_pif1m2DivergentCricktRNAGenesRawWCRatio-5000.txt','C',[],5000)
+
+plt.plot(range(-5000,5000),convcdc9degC,label='cdc9deg-Crick',color='blue')
+plt.plot(range(-5000,5000),convrrm3dC,label='rrm3d-Crick',color='crimson')
+plt.plot(range(-5000,5000),convpif1m2C,label='pif1m2-Crick',color='green')
+plt.plot(range(-5000,5000),convrrm3dpif1m2C,label='rrm3d_pif1m2-Crick',color='darkorange')
+
+plt.plot(range(-5000,5000),convcdc9degW,label='cdc9deg-Watson',color='cornflowerblue')
+plt.plot(range(-5000,5000),convrrm3dW,label='rrm3d-Watson',color='darkorchid')
+plt.plot(range(-5000,5000),convpif1m2W,label='pif1m2-Watson',color='darkseagreen')
+plt.plot(range(-5000,5000),convrrm3dpif1m2W,label='rrm3d_pif1m2-Watson',color='tomato')
+
+plt.legend(loc='best')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Crick Log 2 Ratio')
+plt.title('Watson-Crick Ratio Around Convergent tRNA Genes')
+plt.tight_layout()
+
+plt.plot(range(-5000,5000),divcdc9degC,label='cdc9deg-Crick',color='blue')
+plt.plot(range(-5000,5000),divrrm3dC,label='rrm3d-Crick',color='crimson')
+plt.plot(range(-5000,5000),divpif1m2C,label='pif1m2-Crick',color='green')
+plt.plot(range(-5000,5000),divrrm3dpif1m2C,label='rrm3d_pif1m2-Crick',color='darkorange')
+
+plt.plot(range(-5000,5000),divcdc9degW,label='cdc9deg-Watson',color='cornflowerblue')
+plt.plot(range(-5000,5000),divrrm3dW,label='rrm3d-Watson',color='darkorchid')
+plt.plot(range(-5000,5000),divpif1m2W,label='pif1m2-Watson',color='darkseagreen')
+plt.plot(range(-5000,5000),divrrm3dpif1m2W,label='rrm3d_pif1m2-Watson',color='tomato')
+
+plt.legend(loc='best')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Crick Log 2 Ratio')
+plt.title('Watson-Crick Ratio Around Divergent tRNA Genes')
+plt.tight_layout()
+
+convcdc9deg_combo = (np.array(convcdc9degC) + np.array(convcdc9degW))/2
+convrrm3d_combo = (np.array(convrrm3dC) + np.array(convrrm3dW))/2
+convpif1m2_combo = (np.array(convpif1m2C) + np.array(convpif1m2W))/2
+convrrm3dpif1m2_combo = (np.array(convrrm3dpif1m2C) + np.array(convrrm3dpif1m2W))/2
+
+plt.plot(range(-5000,5000),convrrm3d_combo - convcdc9deg_combo,label='rrm3d',color='blue')
+plt.plot(range(-5000,5000),convpif1m2_combo - convcdc9deg_combo,label='pif1m2',color='crimson')
+plt.plot(range(-5000,5000),convrrm3dpif1m2_combo - convcdc9deg_combo,label='rrm3d_pif1m2',color='green')
+
+
+plt.legend(loc='best')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Crick Log 2 Ratio')
+plt.title('Watson-Crick Ratio Around Convergent tRNA Genes Normalized to WT')
+plt.tight_layout()
+
+divcdc9deg_combo = (np.array(divcdc9degC) + np.array(divcdc9degW))/2
+divrrm3d_combo = (np.array(divrrm3dC) + np.array(divrrm3dW))/2
+divpif1m2_combo = (np.array(divpif1m2C) + np.array(divpif1m2W))/2
+divrrm3dpif1m2_combo = (np.array(divrrm3dpif1m2C) + np.array(divrrm3dpif1m2W))/2
+
+plt.plot(range(-5000,5000),divrrm3d_combo - divcdc9deg_combo,label='rrm3d',color='blue')
+plt.plot(range(-5000,5000),divpif1m2_combo - divcdc9deg_combo,label='pif1m2',color='crimson')
+plt.plot(range(-5000,5000),divrrm3dpif1m2_combo - divcdc9deg_combo,label='rrm3d_pif1m2',color='green')
+
+
+plt.legend(loc='best')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Crick Log 2 Ratio')
+plt.title('Watson-Crick Ratio Around Divergent tRNA Genes Normalized to WT')
+plt.tight_layout()
+
+
+plt.plot(range(-5000,5000),convcdc9degC,label='cdc9deg',color='blue')
+plt.plot(range(-5000,5000),convrrm3dC,label='rrm3d',color='crimson')
+plt.plot(range(-5000,5000),convpif1m2C,label='pif1m2',color='green')
+plt.plot(range(-5000,5000),convrrm3dpif1m2C,label='rrm3d_pif1m2',color='darkorange')
+plt.plot(range(-5000,5000),divcdc9degC,color='blue')
+plt.plot(range(-5000,5000),divrrm3dC,color='crimson')
+plt.plot(range(-5000,5000),divpif1m2C,color='green')
+plt.plot(range(-5000,5000),divrrm3dpif1m2C,color='darkorange')
+plt.legend(loc='best')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Crick Log 2 Ratio')
+plt.title('Watson-Crick Ratio Around Crick tRNA Genes - Convergent and Divergent')
+plt.tight_layout()
+
+plt.plot(range(-5000,5000),convcdc9degW,label='cdc9deg',color='cornflowerblue')
+plt.plot(range(-5000,5000),convrrm3dW,label='rrm3d',color='darkorchid')
+plt.plot(range(-5000,5000),convpif1m2W,label='pif1m2',color='darkseagreen')
+plt.plot(range(-5000,5000),convrrm3dpif1m2W,label='rrm3d_pif1m2',color='tomato')
+plt.plot(range(-5000,5000),divcdc9degW,color='cornflowerblue')
+plt.plot(range(-5000,5000),divrrm3dW,color='darkorchid')
+plt.plot(range(-5000,5000),divpif1m2W,color='darkseagreen')
+plt.plot(range(-5000,5000),divrrm3dpif1m2W,color='tomato')
+plt.legend(loc='best')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Crick Log 2 Ratio')
+plt.title('Watson-Crick Ratio Around Watson tRNA Genes - Convergent and Divergent')
+plt.tight_layout()
+
+fig = plt.figure(1)
+ax = fig.add_subplot(211)
+ax.plot(range(-5000,5000),np.array(convrrm3dW) - np.array(convcdc9degW),label='rrm3d-Watson',color='blue')
+ax.plot(range(-5000,5000),np.array(convpif1m2W) - np.array(convcdc9degW),label='pif1m2-Watson',color='crimson')
+ax.plot(range(-5000,5000),np.array(convrrm3dpif1m2W) - np.array(convcdc9degW),label='rrm3d_pif1m2-Watson',color='green')
+plt.legend(loc='best')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Crick Log 2 Ratio')
+
+ax2 = fig.add_subplot(212)
+plt.plot(range(-5000,5000),np.array(convrrm3dC) - np.array(convcdc9degC),label='rrm3d-Crick',color='blue')
+plt.plot(range(-5000,5000),np.array(convpif1m2C) - np.array(convcdc9degC),label='pif1m2-Crick',color='crimson')
+plt.plot(range(-5000,5000),np.array(convrrm3dpif1m2C) - np.array(convcdc9degC),label='rrm3d_pif1m2-Crick',color='green')
+
+plt.legend(loc='best')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Crick Log 2 Ratio')
+plt.title('Watson-Crick Ratio Around Convergent Watson tRNA Genes Normalized to WT')
+plt.tight_layout()  
+
+
+fig = plt.figure(1)
+ax = fig.add_subplot(211)
+ax.plot(range(-5000,5000),np.array(divrrm3dW) - np.array(divcdc9degW),label='rrm3d-Watson',color='darkorchid')
+ax.plot(range(-5000,5000),np.array(divpif1m2W) - np.array(divcdc9degW),label='pif1m2-Watson',color='darkseagreen')
+ax.plot(range(-5000,5000),np.array(divrrm3dpif1m2W) - np.array(divcdc9degW),label='rrm3d_pif1m2-Watson',color='tomato')
+plt.legend(loc='best')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Crick Log 2 Ratio')
+
+ax2 = fig.add_subplot(212)
+ax2.plot(range(-5000,5000),np.array(divrrm3dC) - np.array(divcdc9degC),label='rrm3d-Crick',color='darkorchid')
+ax2.plot(range(-5000,5000),np.array(divpif1m2C) - np.array(divcdc9degC),label='pif1m2-Crick',color='darkseagreen')
+ax2.plot(range(-5000,5000),np.array(divrrm3dpif1m2C) - np.array(divcdc9degC),label='rrm3d_pif1m2-Crick',color='tomato')
+
+plt.legend(loc='best')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Crick Log 2 Ratio')
+plt.title('Watson-Crick Ratio Around Convergent Watson tRNA Genes Normalized to WT')
+plt.tight_layout()  
+
+
+"""
