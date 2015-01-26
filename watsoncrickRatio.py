@@ -778,6 +778,92 @@ def g4QuadsFoundInMultipleRegions(g4quadsfile,regionfile,window):
         g4sFound.append([reg,g4sInReg])
         
     return g4sFound
+    
+# This function grabs the tRNA genes found within a window around a region. 
+# The region contains the chromosome and the start and end coordinate 
+def RNAPolIIGenesFoundInRegion(rnapol2genesfile,region,window):
+    with open(rnapol2genesfile) as f:
+        rnapol2genes = [line.strip().split('\t')[2:5] for line in f][1:]
+
+    chromosome = region[0]
+    start = region[1]
+    end = region[2]
+    
+    validrnapol2genesForRegion = [i for i in rnapol2genes if i[0]==chromosome and ( (int(i[1]) <= end+window and int(i[1]) >= start-window) or (int(i[2]) <= end+window and int(i[2]) >= start-window) ) ]
+    
+    return validrnapol2genesForRegion
+    
+# This function counts number of tRNA genes in a bunch of regions
+def RNAPolIIGenesFoundInMultipleRegions(rnapol2genesfile,regionfile,window):
+    with open(regionfile) as f:
+        regsBothWTandMUT = [line.strip().split('\t') for line in f][1:]
+        
+    RNAPolIIGenesFound = []
+    
+    for i in regsBothWTandMUT:
+        reg = [i[0],min(int(i[1]),int(i[3])),max(int(i[2]),int(i[4]))]
+        RNAPolIIGenesInReg = RNAPolIIGenesFoundInRegion(rnapol2genesfile,reg,window)        
+        RNAPolIIGenesFound.append([reg,RNAPolIIGenesInReg])
+        
+    return RNAPolIIGenesFound
+
+# This function looks at the watson crick ratio at each tRNA gene and writes it
+# into a file about 10000 bases away
+def RNAPolIIGenesWCRatioWriteFile(rnapol2genesfile,wcratiofile,window,writefile):
+    with open(rnapol2genesfile) as f:
+        rnapol2genes = [line.strip().split('\t')[2:6] for line in f][1:]
+    with open(writefile,'w') as fw:
+        for c in range(1,17):
+            chromosome = str(c)
+            with open(wcratiofile) as f:
+                wcratiosforchrom = [float(line.strip().split('\t')[2]) for line in f if line.strip().split('\t')[0]==chromosome]
+            print(len(wcratiosforchrom))
+            rnapol2genessforchrom = [i for i in rnapol2genes if i[0]==chromosome]
+            for t in rnapol2genessforchrom:
+                start = int(t[1])-window
+                end = int(t[1])+window
+                fw.write(t[0]+'\t'+str(t[1]) + '\t' + str(t[2]) + '\t' + t[3] + '\t')
+                listToWrite = [str(i) for i in wcratiosforchrom[start:end]]
+                fw.write('\t'.join(listToWrite))
+                fw.write('\n')
+                
+# This function calculates the average watson crick ratio for every base pair 
+# away +500 and =500 away from the tRNA gene 
+def RNAPolIIGenesWCRatioMeanForStrand(rnapol2geneWCRatiofile,strand,RNAPol2GenesToExclude,window):
+    with open(rnapol2geneWCRatiofile) as f:
+        wcratios = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
+    print(len(wcratios))
+    wcratiosToInclude = [wcratios[i] for i in range(len(wcratios)) if i+1 not in RNAPol2GenesToExclude]
+    print(len(wcratiosToInclude))
+    avgratios = []
+    for r in range(4,2*window+4):
+        ratiosforr = [float(i[r]) for i in wcratiosToInclude]
+        avgratios.append(np.mean(ratiosforr))
+    return avgratios
+    
+# This function calculates the average watson crick ratio for every base pair 
+# away +500 and =500 away from the tRNA gene 
+def RNAPolIIGenesDiffTwoStrainsWCRatioMeanForStrand(rnapol2geneWCRatiofile1,rnapol2geneWCRatiofile2,strand,RNAPol2GenesToExclude,window):
+    with open(rnapol2geneWCRatiofile1) as f:
+        wcratios1 = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
+    with open(rnapol2geneWCRatiofile2) as f:
+        wcratios2 = [line.strip().split('\t') for line in f if line.strip().split('\t')[3]==strand]
+    print(len(wcratios1))
+    print(len(wcratios2))
+    wcratiosToInclude1 = [wcratios1[i] for i in range(len(wcratios1)) if i+1 not in RNAPol2GenesToExclude]
+    wcratiosToInclude2 = [wcratios2[i] for i in range(len(wcratios2)) if i+1 not in RNAPol2GenesToExclude]
+    print(len(wcratiosToInclude1))
+    print(len(wcratiosToInclude2))
+    oneminustwo = []
+    for r in range(len(wcratiosToInclude1)):
+        w = wcratiosToInclude1[r][4:]
+        m = wcratiosToInclude2[r][4:]
+        oneminustwo.append([float(i)-float(j) for i,j in zip(w,m)])
+    avgratios = []
+    for r in range(2*window):
+        ratiosforr = [float(i[r]) for i in oneminustwo]
+        avgratios.append(np.mean(ratiosforr))
+    return avgratios
 #############################PLOT#########################################
 # Function to plot watson-crick ratios
 
