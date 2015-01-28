@@ -678,6 +678,37 @@ def calculateNumtRNAsFoundPerBase(tRNAsgenesfile,troughpairfile,window,NumPerBas
             trnas.extend([[j[1],j[2],j[3],j[4]] for j in i[1]])
         return trnas
 
+# This function looks at the watson crick ratio at each tRNA gene and writes it
+# into a file about 10000 bases away
+def tRNAGenesStrandWriteFile(trnagenesfile,sgrfile,window,writefile):
+    trnas = wcs.extractStartEndChromStrandFortRNAs(trnagenesfile)
+    with open(writefile,'w') as fw:
+        for c in range(1,17):
+            chromosome = str(c)
+            with open(sgrfile) as f:
+                sgrforchrom = [float(line.strip().split('\t')[2]) for line in f if line.strip().split('\t')[0]==chromosome]
+            print(len(sgrforchrom))
+            trnasforchrom = [i for i in trnas if i[0]==chromosome]
+            for t in trnasforchrom:
+                start = t[1]-window
+                end = t[1]+window
+                fw.write(t[0]+'\t'+str(t[1]) + '\t' + str(t[2]) + '\t' + t[3] + '\t')
+                listToWrite = [str(i) for i in sgrforchrom[start:end]]
+                fw.write('\t'.join(listToWrite))
+                fw.write('\n')
+# This function calculates the average watson crick ratio for every base pair 
+# away +500 and =500 away from the tRNA gene 
+def tRNAGenesStrandDensityMeanForStrand(trnagenesgrfile,tRNAsToExclude,window):
+    with open(trnagenesgrfile) as f:
+        sgrdata = [line.strip().split('\t') for line in f]
+    print(len(sgrdata))
+    sgrdataToInclude = [sgrdata[i] for i in range(len(sgrdata)) if i+1 not in tRNAsToExclude]
+    print(len(sgrdataToInclude))
+    avgsgr = []
+    for r in range(4,2*window+4):
+        ratiosforr = [float(i[r]) for i in sgrdataToInclude]
+        avgsgr.append(np.mean(ratiosforr))
+    return avgsgr
 # This function spits out a plot of tRNAs found in similar and dissimilar troughs
 # of two strains
 def plotwcratiotRNAsWithinTroughs(strain1,strain2,strand,window1,window2,plotall):
@@ -1012,8 +1043,129 @@ def plotTwoSecDerWatsonCrickRatioFromFile(wcratiofile1,wcratiofile2,chromosome,w
     plt.xlabel('Base')
     
     plt.show()
+
+def plotWCRatiotRNAGenesSpecificallyForAminoAcid(aminoacid):
+    aminoacid_cdc9deg_watson = tRNAGenesWCRatioMeanForStrand('../TestData/cdc9degtRNAGenesRawWCRatio-' + aminoacid + '-5000.txt','W',[],5000)
+    aminoacid_cdc9deg_crick = tRNAGenesWCRatioMeanForStrand('../TestData/cdc9degtRNAGenesRawWCRatio-' + aminoacid + '-5000.txt','C',[],5000)
+    aminoacid_rrm3d_watson = tRNAGenesWCRatioMeanForStrand('../TestData/rrm3dtRNAGenesRawWCRatio-' + aminoacid + '-5000.txt','W',[],5000)
+    aminoacid_rrm3d_crick = tRNAGenesWCRatioMeanForStrand('../TestData/rrm3dtRNAGenesRawWCRatio-' + aminoacid + '-5000.txt','C',[],5000)
+    aminoacid_pif1m2_watson = tRNAGenesWCRatioMeanForStrand('../TestData/pif1m2tRNAGenesRawWCRatio-' + aminoacid + '-5000.txt','W',[],5000)
+    aminoacid_pif1m2_crick = tRNAGenesWCRatioMeanForStrand('../TestData/pif1m2tRNAGenesRawWCRatio-' + aminoacid + '-5000.txt','C',[],5000)
+    aminoacid_rrm3dpif1m2_watson = tRNAGenesWCRatioMeanForStrand('../TestData/rrm3d_pif1m2tRNAGenesRawWCRatio-' + aminoacid + '-5000.txt','W',[],5000)
+    aminoacid_rrm3dpif1m2_crick = tRNAGenesWCRatioMeanForStrand('../TestData/rrm3d_pif1m2tRNAGenesRawWCRatio-' + aminoacid + '-5000.txt','C',[],5000)
     
+    fig = plt.figure(1)
+    ax = fig.add_subplot(121)
+    ax.plot(range(-5000,5000),np.array(aminoacid_rrm3d_watson)-np.array(aminoacid_cdc9deg_watson),label='rrm3d')
+    ax.plot(range(-5000,5000),np.array(aminoacid_pif1m2_watson)-np.array(aminoacid_cdc9deg_watson),label='pif1m2')
+    ax.plot(range(-5000,5000),np.array(aminoacid_rrm3dpif1m2_watson)-np.array(aminoacid_cdc9deg_watson),label='rrm3dpif1m2')
+    plt.legend(loc='best')
+    plt.xlabel('Bases')
+    plt.xlim(-5000,5000)
+    plt.axhline(xmax=5000,color='black')
+    plt.axvline(x=0,color='black') 
+    plt.ylabel('Log2 Watson-Crick Ratio')
+    plt.title('Watson-Crick Ratio Around ' + aminoacid + ' tRNA Watson Genes')
+
+    ax = fig.add_subplot(122)
+    ax.plot(range(-5000,5000),np.array(aminoacid_rrm3d_crick)-np.array(aminoacid_cdc9deg_crick),label='rrm3d')
+    ax.plot(range(-5000,5000),np.array(aminoacid_pif1m2_crick)-np.array(aminoacid_cdc9deg_crick),label='pif1m2')
+    ax.plot(range(-5000,5000),np.array(aminoacid_rrm3dpif1m2_crick)-np.array(aminoacid_cdc9deg_crick),label='rrm3dpif1m2')
+    plt.legend(loc='best')
+    plt.xlabel('Bases')
+    plt.xlim(-5000,5000)
+    plt.axhline(xmax=5000,color='black')
+    plt.axvline(x=0,color='black') 
+    plt.ylabel('Log2 Watson-Crick Ratio')
+    plt.title('Watson-Crick Ratio Around ' + aminoacid + ' tRNA Crick Genes')
     
+    plt.show()
+
+def plotWCRatiotRNAGenesSpecificallyForAminoAcidGroups(aminoacidgroup):
+    if aminoacidgroup=='non-polar':
+        aminoacids = ['Alanine','Glycine','Valine','Leucine','Methionine','Isoleucine']
+    elif aminoacidgroup == 'polar':
+        aminoacids = ['Serine','Threonine','Cysteine','Proline','Asparagine','Glutamine']
+    elif aminoacidgroup == 'aromatic':
+        aminoacids = ['Phenylalanine','Tyrosine','Tryptophan']
+    elif aminoacidgroup == 'positive-R-group':
+        aminoacids = ['Lysine','Arginine','Histidine']
+    elif aminoacidgroup == 'negative-R-group':
+        aminoacids = ['Aspartic_acid','Glutamic_acid']
+    
+    aminoacid_cdc9deg_watson = []
+    aminoacid_cdc9deg_crick = []
+    aminoacid_rrm3d_watson = []
+    aminoacid_rrm3d_crick = []
+    aminoacid_pif1m2_watson = []
+    aminoacid_pif1m2_crick = []
+    aminoacid_rrm3dpif1m2_watson = []
+    aminoacid_rrm3dpif1m2_crick = []
+    
+    for i in aminoacids:    
+        aminoacid_cdc9deg_watson.append(tRNAGenesWCRatioMeanForStrand('../TestData/cdc9degtRNAGenesRawWCRatio-' + i + '-5000.txt','W',[],5000))
+        aminoacid_cdc9deg_crick.append(tRNAGenesWCRatioMeanForStrand('../TestData/cdc9degtRNAGenesRawWCRatio-' + i + '-5000.txt','C',[],5000))
+        aminoacid_rrm3d_watson.append(tRNAGenesWCRatioMeanForStrand('../TestData/rrm3dtRNAGenesRawWCRatio-' + i + '-5000.txt','W',[],5000))
+        aminoacid_rrm3d_crick.append(tRNAGenesWCRatioMeanForStrand('../TestData/rrm3dtRNAGenesRawWCRatio-' + i + '-5000.txt','C',[],5000))
+        aminoacid_pif1m2_watson.append(tRNAGenesWCRatioMeanForStrand('../TestData/pif1m2tRNAGenesRawWCRatio-' + i + '-5000.txt','W',[],5000))
+        aminoacid_pif1m2_crick.append(tRNAGenesWCRatioMeanForStrand('../TestData/pif1m2tRNAGenesRawWCRatio-' + i + '-5000.txt','C',[],5000))
+        aminoacid_rrm3dpif1m2_watson.append(tRNAGenesWCRatioMeanForStrand('../TestData/rrm3d_pif1m2tRNAGenesRawWCRatio-' + i + '-5000.txt','W',[],5000))
+        aminoacid_rrm3dpif1m2_crick.append(tRNAGenesWCRatioMeanForStrand('../TestData/rrm3d_pif1m2tRNAGenesRawWCRatio-' + i + '-5000.txt','C',[],5000))
+    
+    avgratios_cdc9deg_watson = []
+    avgratios_cdc9deg_crick = []
+    avgratios_rrm3d_watson = []
+    avgratios_rrm3d_crick = []
+    avgratios_pif1m2_watson = []
+    avgratios_pif1m2_crick = []
+    avgratios_rrm3dpif1m2_watson = []
+    avgratios_rrm3dpif1m2_crick = []
+    
+    for r in range(10000):
+        print r
+        ratiosforr = [float(j[r]) for j in aminoacid_cdc9deg_watson]
+        avgratios_cdc9deg_watson.append(np.mean(ratiosforr))
+        ratiosforr = [float(j[r]) for j in aminoacid_cdc9deg_crick]
+        avgratios_cdc9deg_crick.append(np.mean(ratiosforr))
+        ratiosforr = [float(j[r]) for j in aminoacid_rrm3d_watson]
+        avgratios_rrm3d_watson.append(np.mean(ratiosforr))
+        ratiosforr = [float(j[r]) for j in aminoacid_rrm3d_crick]
+        avgratios_rrm3d_crick.append(np.mean(ratiosforr))
+        ratiosforr = [float(j[r]) for j in aminoacid_pif1m2_watson]
+        avgratios_pif1m2_watson.append(np.mean(ratiosforr))
+        ratiosforr = [float(j[r]) for j in aminoacid_pif1m2_crick]
+        avgratios_pif1m2_crick.append(np.mean(ratiosforr))
+        ratiosforr = [float(j[r]) for j in aminoacid_rrm3dpif1m2_watson]
+        avgratios_rrm3dpif1m2_watson.append(np.mean(ratiosforr))
+        ratiosforr = [float(j[r]) for j in aminoacid_rrm3dpif1m2_crick]
+        avgratios_rrm3dpif1m2_crick.append(np.mean(ratiosforr))
+        
+    fig = plt.figure(1)
+    ax = fig.add_subplot(121)
+    ax.plot(range(-5000,5000),np.array(avgratios_rrm3d_watson)-np.array(avgratios_cdc9deg_watson),label='rrm3d')
+    ax.plot(range(-5000,5000),np.array(avgratios_pif1m2_watson)-np.array(avgratios_cdc9deg_watson),label='pif1m2')
+    ax.plot(range(-5000,5000),np.array(avgratios_rrm3dpif1m2_watson)-np.array(avgratios_cdc9deg_watson),label='rrm3dpif1m2')
+    plt.legend(loc='best')
+    plt.xlabel('Bases')
+    plt.xlim(-5000,5000)
+    plt.axhline(xmax=5000,color='black')
+    plt.axvline(x=0,color='black') 
+    plt.ylabel('Log2 Watson-Crick Ratio')
+    plt.title('Watson-Crick Ratio Around ' + aminoacidgroup + ' tRNA Watson Genes')
+
+    ax = fig.add_subplot(122)
+    ax.plot(range(-5000,5000),np.array(avgratios_rrm3d_crick)-np.array(avgratios_cdc9deg_crick),label='rrm3d')
+    ax.plot(range(-5000,5000),np.array(avgratios_pif1m2_crick)-np.array(avgratios_cdc9deg_crick),label='pif1m2')
+    ax.plot(range(-5000,5000),np.array(avgratios_rrm3dpif1m2_crick)-np.array(avgratios_cdc9deg_crick),label='rrm3dpif1m2')
+    plt.legend(loc='best')
+    plt.xlabel('Bases')
+    plt.xlim(-5000,5000)
+    plt.axhline(xmax=5000,color='black')
+    plt.axvline(x=0,color='black') 
+    plt.ylabel('Log2 Watson-Crick Ratio')
+    plt.title('Watson-Crick Ratio Around ' + aminoacidgroup + ' tRNA Crick Genes')
+    
+    plt.show()
 """   
 convcdc9degW = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/cdc9degConvergentWatsontRNAGenesRawWCRatio-5000.txt','W',[],5000)
 convrrm3dW = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3dConvergentWatsontRNAGenesRawWCRatio-5000.txt','W',[],5000)
@@ -1196,5 +1348,168 @@ plt.ylabel('Watson Crick Log 2 Ratio')
 plt.title('Watson-Crick Ratio Around Convergent Watson tRNA Genes Normalized to WT')
 plt.tight_layout()  
 
+cdc9degConvC_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/cdc9degConvergentCricktRNAGenesRawC-5000.txt',[],5000)
+cdc9degConvC_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/cdc9degConvergentCricktRNAGenesRawW-5000.txt',[],5000)
+cdc9degConvW_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/cdc9degConvergentWatsontRNAGenesRawW-5000.txt',[],5000)
+cdc9degConvW_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/cdc9degConvergentWatsontRNAGenesRawC-5000.txt',[],5000)
+
+rrm3dConvC_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3dConvergentCricktRNAGenesRawC-5000.txt',[],5000)
+rrm3dConvC_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3dConvergentCricktRNAGenesRawW-5000.txt',[],5000)
+rrm3dConvW_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3dConvergentWatsontRNAGenesRawW-5000.txt',[],5000)
+rrm3dConvW_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3dConvergentWatsontRNAGenesRawC-5000.txt',[],5000)
+
+pif1m2ConvC_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/pif1m2ConvergentCricktRNAGenesRawC-5000.txt',[],5000)
+pif1m2ConvC_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/pif1m2ConvergentCricktRNAGenesRawW-5000.txt',[],5000)
+pif1m2ConvW_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/pif1m2ConvergentWatsontRNAGenesRawW-5000.txt',[],5000)
+pif1m2ConvW_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/pif1m2ConvergentWatsontRNAGenesRawC-5000.txt',[],5000)
+
+rrm3dpif1m2ConvC_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3d_pif1m2ConvergentCricktRNAGenesRawC-5000.txt',[],5000)
+rrm3dpif1m2ConvW_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3d_pif1m2ConvergentWatsontRNAGenesRawW-5000.txt',[],5000)
+rrm3dpif1m2ConvC_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3d_pif1m2ConvergentCricktRNAGenesRawW-5000.txt',[],5000)
+rrm3dpif1m2ConvW_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3d_pif1m2ConvergentWatsontRNAGenesRawC-5000.txt',[],5000)
+
+cdc9degDivC_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/cdc9degDivergentCricktRNAGenesRawC-5000.txt',[],5000)
+cdc9degDivC_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/cdc9degDivergentCricktRNAGenesRawW-5000.txt',[],5000)
+cdc9degDivW_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/cdc9degDivergentWatsontRNAGenesRawW-5000.txt',[],5000)
+cdc9degDivW_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/cdc9degDivergentWatsontRNAGenesRawC-5000.txt',[],5000)
+
+rrm3dDivC_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3dDivergentCricktRNAGenesRawC-5000.txt',[],5000)
+rrm3dDivC_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3dDivergentCricktRNAGenesRawW-5000.txt',[],5000)
+rrm3dDivW_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3dDivergentWatsontRNAGenesRawW-5000.txt',[],5000)
+rrm3dDivW_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3dDivergentWatsontRNAGenesRawC-5000.txt',[],5000)
+
+pif1m2DivC_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/pif1m2DivergentCricktRNAGenesRawC-5000.txt',[],5000)
+pif1m2DivC_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/pif1m2DivergentCricktRNAGenesRawW-5000.txt',[],5000)
+pif1m2DivW_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/pif1m2DivergentWatsontRNAGenesRawW-5000.txt',[],5000)
+pif1m2DivW_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/pif1m2DivergentWatsontRNAGenesRawC-5000.txt',[],5000)
+
+rrm3dpif1m2DivC_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3d_pif1m2DivergentCricktRNAGenesRawC-5000.txt',[],5000)
+rrm3dpif1m2DivW_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3d_pif1m2DivergentWatsontRNAGenesRawW-5000.txt',[],5000)
+rrm3dpif1m2DivC_Watson = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3d_pif1m2DivergentCricktRNAGenesRawW-5000.txt',[],5000)
+rrm3dpif1m2DivW_Crick = wcr.tRNAGenesStrandDensityMeanForStrand('../TestData/rrm3d_pif1m2DivergentWatsontRNAGenesRawC-5000.txt',[],5000)
+
+fig = plt.figure(1)
+ax = fig.add_subplot(221)
+ax.plot(range(-5000,5000),np.array(rrm3dConvW_Watson)-np.array(cdc9degConvW_Watson),label="rrm3dW_W")
+ax.plot(range(-5000,5000),np.array(pif1m2ConvW_Watson)-np.array(cdc9degConvW_Watson),label="pif1m2W_W")
+ax.plot(range(-5000,5000),np.array(rrm3dpif1m2ConvW_Watson)-np.array(cdc9degConvW_Watson),label="rrm3dpif1m2W_W")
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Density')
+plt.legend(loc='best')
+ax = fig.add_subplot(222)
+ax.plot(range(-5000,5000),np.array(rrm3dConvW_Crick)-np.array(cdc9degConvW_Crick),label="rrm3dW_C")
+ax.plot(range(-5000,5000),np.array(pif1m2ConvW_Crick)-np.array(cdc9degConvW_Crick),label="pif1m2W_C")
+ax.plot(range(-5000,5000),np.array(rrm3dpif1m2ConvW_Crick)-np.array(cdc9degConvW_Crick),label="rrm3dpif1m2W_C")
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Crick Density')
+plt.legend(loc='best')
+
+ax = fig.add_subplot(223)
+ax.plot(range(-5000,5000),np.array(rrm3dDivC_Watson)-np.array(cdc9degDivC_Watson),label="rrm3dC_W")
+ax.plot(range(-5000,5000),np.array(pif1m2DivC_Watson)-np.array(cdc9degDivC_Watson),label="pif1m2C_W")
+ax.plot(range(-5000,5000),np.array(rrm3dpif1m2DivC_Watson)-np.array(cdc9degDivC_Watson),label="rrm3dpif1m2C_W")
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Density')
+plt.legend(loc='best')
+ax = fig.add_subplot(224)
+ax.plot(range(-5000,5000),np.array(rrm3dDivC_Crick)-np.array(cdc9degDivC_Crick),label="rrm3dC_C")
+ax.plot(range(-5000,5000),np.array(pif1m2DivC_Crick)-np.array(cdc9degDivC_Crick),label="pif1m2C_C")
+ax.plot(range(-5000,5000),np.array(rrm3dpif1m2DivC_Crick)-np.array(cdc9degDivC_Crick),label="rrm3dpif1m2C_C")
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Crick Density')
+plt.legend(loc='best')
+plt.tight_layout()
+
+fig = plt.figure(1)
+ax = fig.add_subplot(221)
+ax.plot(range(-5000,5000),np.array(rrm3dDivW_Watson)-np.array(cdc9degDivW_Watson),label="rrm3dW_W")
+ax.plot(range(-5000,5000),np.array(pif1m2DivW_Watson)-np.array(cdc9degDivW_Watson),label="pif1m2W_W")
+ax.plot(range(-5000,5000),np.array(rrm3dpif1m2DivW_Watson)-np.array(cdc9degDivW_Watson),label="rrm3dpif1m2W_W")
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Density')
+plt.legend(loc='best')
+ax = fig.add_subplot(222)
+ax.plot(range(-5000,5000),np.array(rrm3dDivW_Crick)-np.array(cdc9degDivW_Crick),label="rrm3dW_C")
+ax.plot(range(-5000,5000),np.array(pif1m2DivW_Crick)-np.array(cdc9degDivW_Crick),label="pif1m2W_C")
+ax.plot(range(-5000,5000),np.array(rrm3dpif1m2DivW_Crick)-np.array(cdc9degDivW_Crick),label="rrm3dpif1m2W_C")
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Crick Density')
+plt.legend(loc='best')
+
+ax = fig.add_subplot(223)
+ax.plot(range(-5000,5000),np.array(rrm3dConvC_Watson)-np.array(cdc9degConvC_Watson),label="rrm3dC_W")
+ax.plot(range(-5000,5000),np.array(pif1m2ConvC_Watson)-np.array(cdc9degConvC_Watson),label="pif1m2C_W")
+ax.plot(range(-5000,5000),np.array(rrm3dpif1m2ConvC_Watson)-np.array(cdc9degConvC_Watson),label="rrm3dpif1m2C_W")
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Watson Density')
+plt.legend(loc='best')
+ax = fig.add_subplot(224)
+ax.plot(range(-5000,5000),np.array(rrm3dConvC_Crick)-np.array(cdc9degConvC_Crick),label="rrm3dC_C")
+ax.plot(range(-5000,5000),np.array(pif1m2ConvC_Crick)-np.array(cdc9degConvC_Crick),label="pif1m2C_C")
+ax.plot(range(-5000,5000),np.array(rrm3dpif1m2ConvC_Crick)-np.array(cdc9degConvC_Crick),label="rrm3dpif1m2C_C")
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.xlabel('Bases')
+plt.ylabel('Crick Density')
+plt.legend(loc='best')
+plt.tight_layout()
+
+alanine_cdc9deg_watson = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/cdc9degtRNAGenesRawWCRatio-Alanine-5000.txt','W',[],5000)
+alanine_cdc9deg_crick = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/cdc9degtRNAGenesRawWCRatio-Alanine-5000.txt','C',[],5000)
+alanine_rrm3d_watson = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3dtRNAGenesRawWCRatio-Alanine-5000.txt','W',[],5000)
+alanine_rrm3d_crick = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3dtRNAGenesRawWCRatio-Alanine-5000.txt','C',[],5000)
+alanine_pif1m2_watson = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/pif1m2tRNAGenesRawWCRatio-Alanine-5000.txt','W',[],5000)
+alanine_pif1m2_crick = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/pif1m2tRNAGenesRawWCRatio-Alanine-5000.txt','C',[],5000)
+alanine_rrm3dpif1m2_watson = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3d_pif1m2tRNAGenesRawWCRatio-Alanine-5000.txt','W',[],5000)
+alanine_rrm3dpif1m2_crick = wcr.tRNAGenesWCRatioMeanForStrand('../TestData/rrm3d_pif1m2tRNAGenesRawWCRatio-Alanine-5000.txt','C',[],5000)
+
+fig = plt.figure(1)
+ax = fig.add_subplot(121)
+ax.plot(range(-5000,5000),alanine_cdc9deg_watson,label='cdc9deg')
+ax.plot(range(-5000,5000),alanine_rrm3d_watson,label='rrm3d')
+ax.plot(range(-5000,5000),alanine_pif1m2_watson,label='pif1m2')
+ax.plot(range(-5000,5000),alanine_rrm3dpif1m2_watson,label='rrm3dpif1m2')
+plt.legend(loc='best')
+plt.xlabel('Bases')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.ylabel('Log2 Watson-Crick Ratio')
+plt.title('Watson-Crick Ratio Around Alanine tRNA Watson Genes')
+
+ax = fig.add_subplot(122)
+ax.plot(range(-5000,5000),alanine_cdc9deg_crick,label='cdc9deg')
+ax.plot(range(-5000,5000),alanine_rrm3d_crick,label='rrm3d')
+ax.plot(range(-5000,5000),alanine_pif1m2_crick,label='pif1m2')
+ax.plot(range(-5000,5000),alanine_rrm3dpif1m2_crick,label='rrm3dpif1m2')
+plt.legend(loc='best')
+plt.xlabel('Bases')
+plt.xlim(-5000,5000)
+plt.axhline(xmax=5000,color='black')
+plt.axvline(x=0,color='black') 
+plt.ylabel('Log2 Watson-Crick Ratio')
+plt.title('Watson-Crick Ratio Around Alanine tRNA Crick Genes')
 
 """
