@@ -128,3 +128,27 @@ showboxplotsForFeat <- function(troughs,clusters,feature,absval=FALSE){
   # Plot boxplot
   qplot(factor(variable), value, data = alldf, geom = "boxplot")
 }
+
+gettRNAs <- function(strain.trnas,trnas,strand,posorneg,window){
+  strain.trnasJustRatios <- strain.trnas[,5:(2*window+4)]
+  rownames(strain.trnas) <- trnas$Name
+  rownames(strain.trnasJustRatios) <- trnas$Name
+  rownames(trnas) <- trnas$Name
+  if (strand=='W'){
+    trnas.names.strand <- rownames(trnas[trnas$Strand=='W',])
+  }
+  else{
+    trnas.names.strand <- rownames(trnas[trnas$Strand=='C',])
+  }
+  
+  strain.trnasJustRatios.strand <- strain.trnasJustRatios[trnas.names.strand,]
+  rowmean.WCstrain.strand <- apply(strain.trnasJustRatios.strand,1,mean)
+  
+  if (posorneg=='pos'){
+    trnas.avg.strand.names <- names(rowmean.WCstrain.strand[rowmean.WCstrain.strand>0])
+  }
+  else{
+    trnas.avg.strand.names <- names(rowmean.WCstrain.strand[rowmean.WCstrain.strand<0])
+  }
+  return(trnas.avg.strand.names)
+}
