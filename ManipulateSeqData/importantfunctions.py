@@ -442,7 +442,7 @@ def convertToWigFile(readfile,writefile,ifcrick):
             chrom = str(c)
             print(chrom)
             with open(readfile) as f:
-                chrmlines = [line.strip().split('\t') for line in f if line.strip().split('\t')[0]==cerevisiaechrmconvert[chrom]]
+                chrmlines = [line.strip().split('\t') for line in f if line.strip().split('\t')[0]==chrom]
             if len(chrmlines)!=0:
                 fw.write('variableStep chrom=' + cerevisiaechrmconvert[chrom] + ' span=1' + '\n')
                 for i in chrmlines:

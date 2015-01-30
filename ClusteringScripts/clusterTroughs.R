@@ -129,26 +129,51 @@ showboxplotsForFeat <- function(troughs,clusters,feature,absval=FALSE){
   qplot(factor(variable), value, data = alldf, geom = "boxplot")
 }
 
-gettRNAs <- function(strain.trnas,trnas,strand,posorneg,window){
-  strain.trnasJustRatios <- strain.trnas[,5:(2*window+4)]
-  rownames(strain.trnas) <- trnas$Name
-  rownames(strain.trnasJustRatios) <- trnas$Name
-  rownames(trnas) <- trnas$Name
+getRightOrLeftMovingFork <- function(strain.wcratio,elements,strand,posorneg,window){
+  strain.JustRatios <- strain.wcratio[,5:(2*window+4)]
+  #rownames(strain.JustRatios) <- rownames(strain.wcratio)
   if (strand=='W'){
-    trnas.names.strand <- rownames(trnas[trnas$Strand=='W',])
+    elements.names.strand <- intersect(rownames(elements[elements$Strand=='W',]),rownames(strain.JustRatios))
   }
   else{
-    trnas.names.strand <- rownames(trnas[trnas$Strand=='C',])
+    elements.names.strand <- intersect(rownames(elements[elements$Strand=='C',]),rownames(strain.JustRatios))
   }
   
-  strain.trnasJustRatios.strand <- strain.trnasJustRatios[trnas.names.strand,]
-  rowmean.WCstrain.strand <- apply(strain.trnasJustRatios.strand,1,mean)
+  strain.JustRatios.strand <- strain.JustRatios[elements.names.strand,]
+  rowmean.WCstrain.strand <- apply(strain.JustRatios.strand,1,mean)
   
   if (posorneg=='pos'){
-    trnas.avg.strand.names <- names(rowmean.WCstrain.strand[rowmean.WCstrain.strand>0])
+    avg.strand.names <- names(rowmean.WCstrain.strand[rowmean.WCstrain.strand>0])
   }
   else{
-    trnas.avg.strand.names <- names(rowmean.WCstrain.strand[rowmean.WCstrain.strand<0])
+    avg.strand.names <- names(rowmean.WCstrain.strand[rowmean.WCstrain.strand<0])
   }
-  return(trnas.avg.strand.names)
+  return(avg.strand.names)
+}
+
+writeConvDivFilesForStrain <- function(strain,genomicelement,elements,watsontoremove,cricktoremove){
+  wcratio.strain <- read.table(paste(strain,genomicelement,'RawWCRatio-5000.txt',sep=''),header=FALSE)
+  rownames(wcratio.strain) <- elements$Name
+  
+  wcratio.strain.watson <- wcratio.strain[wcratio.strain$V4=='W',]
+  if (length(watsontoremove)!=0){
+    wcratio.strain.watson <- wcratio.strain.watson[-watsontoremove,]
+  }
+  wcratio.strain.crick <- wcratio.strain[wcratio.strain$V4=='C',]
+  if (length(cricktoremove)!=0){
+    wcratio.strain.crick <- wcratio.strain.crick[-cricktoremove,]
+  }
+  
+  wcratio.strain.valid <- rbind(wcratio.strain.crick,wcratio.strain.watson)
+  wcratio.strain <- wcratio.strain.valid[order(wcratio.strain.valid$V1,wcratio.strain.valid$V2),]
+  
+  convergent.watson.strain <- getRightOrLeftMovingFork(wcratio.strain,elements,'W','neg',5000)
+  divergent.watson.strain <- getRightOrLeftMovingFork(wcratio.strain,elements,'W','pos',5000)
+  convergent.crick.strain <- getRightOrLeftMovingFork(wcratio.strain,elements,'C','pos',5000)
+  divergent.crick.strain <- getRightOrLeftMovingFork(wcratio.strain,elements,'C','neg',5000)
+  
+  write.table(wcratio.strain[convergent.watson.strain,],paste(strain,'ConvergentWatson',genomicelement,'RawWCRatio-5000.txt',sep=''),quote = FALSE,sep = '\t',row.names = FALSE,col.names = FALSE)
+  write.table(wcratio.strain[divergent.watson.strain,],paste(strain,'DivergentWatson',genomicelement,'RawWCRatio-5000.txt',sep=''),quote = FALSE,sep = '\t',row.names = FALSE,col.names = FALSE)
+  write.table(wcratio.strain[convergent.crick.strain,],paste(strain,'ConvergentCrick',genomicelement,'RawWCRatio-5000.txt',sep=''),quote = FALSE,sep = '\t',row.names = FALSE,col.names = FALSE)
+  write.table(wcratio.strain[divergent.crick.strain,],paste(strain,'DivergentCrick',genomicelement,'RawWCRatio-5000.txt',sep=''),quote = FALSE,sep = '\t',row.names = FALSE,col.names = FALSE)
 }
